@@ -1,5 +1,5 @@
 ﻿#Requires AutoHotkey v2.0
-#Include %A_ScriptDir%\Lib\UIA.ahk
+#Include ..\UIA.ahk
 #SingleInstance Force
 
 ; Function to activate the Chrome window

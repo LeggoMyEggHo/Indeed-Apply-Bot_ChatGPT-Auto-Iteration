@@ -1,11 +1,16 @@
 ﻿#Requires AutoHotkey v2.0
 
-#Include Random.ahk
-#Include GetElementCoordinates.ahk
-#Include ShowToolTipWithTimer.ahk
+;#Include ..\UIA.ahk
+;#Include Random.ahk
+;#Include GetElementCoordinates.ahk
+;#Include ShowToolTipWithTimer.ahk
+
+if FileExist("ClickElementByPath_debug_log.txt") {
+    FileDelete("ClickElementByPath_debug_log.txt")
+}
 
 ; Function to click an element by path or directly by element
-ClickElementByPath(pathOrElement, rootElement := "", value := "", timeout := 2000) {
+ClickElementByPath(pathOrElement, rootElement := "", value := "", timeout := 2000, alignToElement := false) {
     element := pathOrElement
 
     ; Determine if pathOrElement is already an element or needs to be resolved from a path
@@ -28,12 +33,9 @@ ClickElementByPath(pathOrElement, rootElement := "", value := "", timeout := 200
 
     ; Activate the Chrome window before any further action
     WinActivate("ahk_exe chrome.exe")
-
-    element.ScrollIntoView()
-    RandomDelay(300, 500)
-
-    ; Retrieve and adjust the element's coordinates
-    coords := GetElementCoordinates(element, rootElement)
+    
+    ; Retrieve and adjust the element's coordinates (adjust with ScrollIntoView and Send("{WheelDown}"))
+    coords := GetElementCoordinates(element, rootElement , alignToElement)
     if !coords {
         ShowToolTipWithTimer("ClickElementByPath failed to get element coordinates for element: " element.Name)
         FileAppend("ClickElementByPath failed to get element coordinates for element: " element.Name "`n`n", "ClickElementByPath_debug_log.txt")
@@ -41,10 +43,10 @@ ClickElementByPath(pathOrElement, rootElement := "", value := "", timeout := 200
     }
 
     ; Debugging: Log the element coordinates before moving
-    ;MsgBox("ClickElementByPath moving to X=" coords.x ", Y=" coords.y)
+    ;MsgBox("ClickElementByPath moving to X=" coords.x ", Y=" coords.y "elementRight=" coords.elementRight "elementBottom=" coords.elementBottom)
     
     ; Perform random mouse movement before interacting
-    RandomMouseMove(coords.x, coords.y, rangeX := 15, rangeY := 5, speed := 10)
+    RandomMouseMove(coords.x, coords.y, coords.elementRight, coords.elementBottom,,, speed := 10)
     
     ; Adding a MsgBox to see where the mouse is after moving
     MouseGetPos(&currentX, &currentY)
@@ -55,7 +57,7 @@ ClickElementByPath(pathOrElement, rootElement := "", value := "", timeout := 200
         element.Value := value
     } else {
         ; Pass the exact coordinates to RandomUIAClick
-        RandomUIAClick(coords.x, coords.y)
+        RandomUIAClick(currentX, currentY)
     }
     return true
 }

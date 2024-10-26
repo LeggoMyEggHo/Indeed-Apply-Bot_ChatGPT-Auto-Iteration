@@ -1,12 +1,16 @@
 ﻿#Requires AutoHotkey v2.0
-#Include Random.ahk
-#Include ShowToolTipWithTimer.ahk
+#Include ..\Helper_Functions\Random.ahk
+#Include ..\Helper_Functions\ShowToolTipWithTimer.ahk
+
+if FileExist("TabInteraction_debug_log.txt") {
+    FileDelete("TabInteraction_debug_log.txt")
+}
 
 CloseTabWithCheck(rootElement) {
     ; Close the current tab
     SendInput("{Ctrl down}w{Ctrl up}")
-    Sleep(800)
-    logFile := "debug_log.txt"
+    Sleep(300)
+    logFile := "TabInteraction_debug_log.txt"
     ShowToolTipWithTimer("Closing the tab.")
     FileAppend("Closing the tab.`n", logFile)
 
@@ -22,10 +26,7 @@ CloseTabWithCheck(rootElement) {
             ; If the "Leave" button is found, press Space to confirm closing the tab
             ShowToolTipWithTimer("Leave button detected. Pressing Space to confirm.")
             FileAppend("Leave button detected. Pressing Space to confirm.`n", logFile)
-            leaveButton.ScrollIntoView()
-            RandomDelay(100, 300)
             SendInput("{Space}")
-            RandomDelay(500, 1000)
         }
     } catch {
         ; If FindFirst throws an error, it means the "Leave" button was not found

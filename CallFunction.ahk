@@ -1,33 +1,40 @@
 ﻿#Requires AutoHotkey v2.0
 
-#Include ShowToolTipWithTimer.ahk
-#SingleInstance Force
+#Include ..\Helper_Functions\ShowToolTipWithTimer.ahk
+#SingleInstance
+
+if FileExist("CallFunction_Debug_Log.txt") {
+    FileDelete("CallFunction_Debug_Log.txt")
+}
 
 IsCallableFunction(FunctionToCall) {
+    logFile := "CallFunction_Debug_Log.txt"
     Try {
-        return IsObject(FunctionToCall) && FunctionToCall.HasMethod("Call")
+        if IsObject(FunctionToCall) && FunctionToCall.HasMethod("Call") {
+            return true
+        }
     } Catch {
         ; If function is not found or callable, log the error and break the loop
-        FileAppend("Error: No callable function found for functionToCall: " functionToCall "`n`n", "function_debug_log.txt")
+        FileAppend("Error: No callable function found for functionToCall: " functionToCall "`n`n", logFile)
         ShowToolTipWithTimer("No callable function found for functionToCall: " functionToCall, , 2000)
         return false
     }
 }
 
 CallFunction(functionToCall, rootElement) {
+    logFile := "CallFunction_Debug_Log.txt"
     if IsCallableFunction(functionToCall) {
         ; Call the function and return whether it was successful
         success := functionToCall.Call(rootElement)
         if success {
-            ShowToolTipWithTimer("Successfully called function: " functionToCall)
-        FileAppend("Successfully called functionToCall: " functionToCall "`n`n", "debug_Log.txt")
-        return true
+            ;ShowToolTipWithTimer("Successfully called functionToCall.")
+            ;FileAppend("Successfully called functionToCall.`n`n", logFile)
+            return true
         }
     } else {
         ; If function is not found or callable, log the error and break the loop
-        ToolTip("No callable function found for functionToCall: " functionToCall)
-        SetTimer () => ToolTip(""), -1000
-        FileAppend("Error: No callable function for title: " functionToCall "`n`n", "function_debug_log.txt")
+        ShowToolTipWithTimer("No callable function found for functionToCall: " functionToCall)
+        FileAppend("Error: No callable function for title: " functionToCall "`n`n", logFile)
         return false
     }
 }

@@ -1,0 +1,16 @@
+/IndeedAutoApply
+│
+├── main.ahk                       ; Entry point of your script
+├── HandleJobSearch.ahk            ; Handling job search-related tasks
+├── HandleTitles.ahk               ; Handling window title detection and processing
+├── PageHandling.ahk               ; Managing navigation between pages
+├── UIAutomationFunctions.ahk      ; Common UI interaction functions
+├── ErrorHandling.ahk              ; Functions for handling errors
+├── Utilities.ahk                  ; Helper utility functions
+├── /Lib                           ; Any libraries you are using
+│   └── ...                        ; Existing libraries you use
+└── /Logs                          ; Store log files
+    └── skip_log.txt
+    └── JobApplicationQA_Debug_Log.txt
+    └── missing_titles_log.txt
+    └── licenses_log.txt

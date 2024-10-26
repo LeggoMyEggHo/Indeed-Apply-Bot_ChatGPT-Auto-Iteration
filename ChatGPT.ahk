@@ -1,316 +1,362 @@
-﻿#Requires AutoHotkey v2.0
+﻿#Requires AutoHotkey v2.0+
 
-#Include C:\Users\bachi\Downloads\UIA-v2-main\UIA-v2-main\Lib\UIA.ahk
-#Include ActivateChromeWindow.ahk
-#Include GetRootElement.ahk
-#Include CheckForHighlightedText.ahk
-#Include TabInteraction.ahk
-#Include HandleClipboard.ahk
+#Include ..\Helper_Functions\CheckAndSetHotkey\CheckAndSetHotkey.ahk
+#Include ..\UIA.ahk
+#Include ..\Helper_Functions\ActivateChromeWindow.ahk
+#Include ..\Helper_Functions\GetRootElement.ahk
+#Include ..\Helper_Functions\CheckForHighlightedText.ahk
+#Include ..\Helper_Functions\TabInteraction.ahk
+#Include ..\Helper_Functions\HandleClipboard.ahk
+#Include ..\Helper_Functions\ShowToolTipWithTimer.ahk
+#Include ..\Helper_Functions\ClickElementByPath.ahk
+#Include ..\Helper_Functions\WaitForCondition\WaitForCondition.ahk
+#Include ..\AHK-v2-libraries-main\Lib\Misc.ahk
+#Include ..\AHK-v2-libraries-main\Lib\Acc.ahk
+#Include ..\ChatGPT_ahk_script\GetInput.ahk
+#Include ..\ChatGPT_ahk_script\BuildCombinedPrompt.ahk
+#Include ..\ChatGPT_ahk_script\HandleOpenChatGPT.ahk
+#Include ..\ChatGPT_ahk_script\CopyChatGPTResponse.ahk
+#Include ..\ChatGPT_ahk_script\AddChatGPTResponse.ahk
+#Include ..\Helper_Functions\GetArrayLength\GetArrayLength.ahk
 
-#SingleInstance Force 
+#SingleInstance
 
 ; ChatGPT Interaction Script for AHK v2
 ; This script handles copying input, submitting it to ChatGPT, grabbing the response, and returning the value.
 
-global lastChatGPTResponse := ""  ; Global variable to store the last response for iterations
+global optimalPrompt := "Which one of these is the best response? Your only options for response are 1 for the first one or 2 for the second one.`n"
+
+; Global variables for the specified prompt and resume assigned in GetInput.ahk and used in BuildCombinedPrompt.ahk
+global resumeSpecifiedPrompt := "Act like you are applying to jobs using this resume and answer the following application question with a single sentence and no period unless necessary, keeping the response as brief and direct as possible, without adding extra details, using first-person if a perspective is needed. If the answer can't be implied by using the given resume, respond with something similar to no or 0 but make sure the response is as brief and direct as possible.`n"
+global defaultSpecifiedPrompt := "If you see a GPT response attached to this prompt, then your response will be appended and fed to a GPT model in the next iteration, so do not provide any non-essential output, such as a summary, breakdown, key enhancements, example usage, or describing your changes. Do not provide anything that doesn't change the solution or isn't explicitly needed for the next user to use or build upon your script. Refine, improve, and evolve without losing the core intent or sacrificing simplicity. Each iteration should build meaningfully on the previous one by introducing significant improvements, exploring new directions, and solving deeper problems rather than just incremental tweaks. Strive to balance innovation, broader use cases, and practical usability. Explicitly address the following universal needs in every iteration: Broader Use Cases: How can this solution be adapted or expanded to address a wider range of scenarios or use cases? Focus on increasing applicability without adding unnecessary complexity. Innovation and Creativity: Is there a more innovative or creative way to approach this? Look for opportunities to challenge existing assumptions and explore new approaches that could lead to transformative changes or breakthroughs, not just small refinements. Avoiding Incremental Refinements: Have the changes made in this iteration moved the solution meaningfully toward global optimization, or are they just minor tweaks? Avoid small, incremental changes unless they significantly enhance overall quality, usability, or functionality. Instead, aim for deeper improvements that advance the solution. Simplicity vs. Complexity: Are there areas where the solution could be simplified without losing functionality or impact? Prioritize simplicity and clarity while retaining the solution’s core purpose. Preventing Feature Overload: Does this iteration introduce new features or functionality that add real value, or is it contributing to feature overload? Focus on adding only meaningful improvements, and avoid overwhelming the core with unnecessary options, settings, or components. Avoiding Repetition: Am I avoiding repetition by introducing new concepts, ideas, or angles, rather than reworking the same solutions in slightly different ways? Ensure that each iteration offers fresh insights or advancements, not simply rephrasing or marginal adjustments. Modularity and Scalability: Can the solution be modularized or broken into distinct parts to improve flexibility and scalability? Consider breaking the solution into smaller, reusable components to handle growth and complexity while maintaining simplicity. New Perspectives and Frameworks: Have I considered alternative perspectives, approaches, or frameworks that could lead to a more efficient or innovative solution? Don’t get locked into a single way of thinking; explore new methodologies that could improve the overall approach. Alignment with the Core Problem: Is the current iteration aligned with the core problem while extending the solution’s broader applicability? Ensure the solution is still solving the primary issue but adaptable to new contexts. Finalization and Completion: Is it time to finalize the solution? Determine if the iteration process has reached a point where the solution is comprehensive and effective, allowing you to stop iterating and finalize the outcome without unnecessary further refinements."
+global verboseLogFile := "verbose_debug_log.txt"
+global resetCombinedPrompt := false
+global paidGPTFlag := false, paidGPTFlagLocked := false
+
+if FileExist("ChatGPT_Debug_Log.txt") {
+    FileDelete("ChatGPT_Debug_Log.txt")
+}
+
+if FileExist("ChatGPT_log.txt") {
+    FileDelete("ChatGPT_log.txt")
+}
 
 ; Main function that handles the ChatGPT interaction
-ChatGPT_Interaction(inputText := "", specifiedPrompt := "", resume := "", combinedPrompt := "", chatGPTResponse := "") {
-    global iterationCount
-
-    ; display the inputText in a message box
-    ;MsgBox("Input: " inputText.Name)
-    ; Step 0: Prepare Clipboard and Input
-    if specifiedPrompt != "" {
-        if resume != "" {
-            combinedPrompt := CombineSpecifiedPrompt(inputText, specifiedPrompt, resume)
-        } else if !IsObject(inputText) {
-            ;MsgBox("Input is not an object")
-            combinedPrompt := CombineSpecifiedPrompt(inputText, specifiedPrompt, "")
-
-            A_Clipboard := ""
-            Sleep(100)
-            A_Clipboard := combinedPrompt
-        } else if IsObject(inputText) {
-            ;MsgBox("Input is an object")
-            combinedPrompt := CombineSpecifiedPrompt(inputText, specifiedPrompt, "")
-        } else {
-            MsgBox("Invalid input. First input parameter must be a string.")
-        }
-    }
+ChatGPT_Interaction(inputText := "", specifiedPrompt := "", resume := "", combinedPrompt := "", chatGPTResponse := "", maxIterations := "", iterationCount := "", getGPTFeedback := "") {
+    global noResponsesFlag
     
-    ;MsgBox("Combined Prompt: " combinedPrompt)
-    ;MsgBox("Input: " inputText)
-
-    ; Step 1: Copy the input to the clipboard
-    if iterationCount = 1 {
-        HandleClipboard(combinedPrompt)
+    ; Ensure iterationCount is correctly set and incremented across calls
+    if iterationCount == "" {
+        MsgBox("iterationCount is empty. Setting iterationCount to 1.")
+        iterationCount := 1
     }
 
-    HandleOpenChatGPT()
+    ; Step 0: Prepare Clipboard and Input
+    combinedPrompt := BuildCombinedPrompt(inputText, specifiedPrompt, resume, combinedPrompt, chatGPTResponse, maxIterations, iterationCount, noResponsesFlag, getGPTFeedback)
+
+    ; Step 1: Copy the combinedPrompt to the clipboard
+    HandleClipboard(, combinedPrompt)
+
+    ;MsgBox("Combined Prompt before opening ChatGPT: " combinedPrompt)
+    ;FileAppend("Combined Prompt before opening ChatGPT: " combinedPrompt "`n", "ChatGPT_Debug_Log.txt")
+
+    hwnd := HandleOpenChatGPT(iterationCount, maxIterations)
+    Sleep(500)
 
     ;MsgBox("Clipboard Input: " A_Clipboard)
 
     ; Step 4: Paste the input into ChatGPT's text box
-    Send("^v")  ; Paste the clipboard content
-    Sleep(300)
+    pasteResult := HandleClipboard(,,,, true)
+    Sleep(600)
+    ;FileAppend("Returned HandleClipboard pasteResult: " pasteResult "`nClipboard Input: " A_Clipboard "`n", "verbose_debug_log.txt")
     Send("{Enter}")  ; Submit the request
 
-    ; Step 5: Copy the ChatGPT response
+    ; Step 5: Copy the ChatGPT response to the clipboard and rotate previous responses if needed
     chatGPTResponse := CopyChatGPTResponse()
-    lastChatGPTResponse := chatGPTResponse
 
-    FileAppend("Question 1: " combinedPrompt "`n`nChatGPT response: " chatGPTResponse "`n`n", "ChatGPT_log.txt")
+    Sleep(100)
+    if getGPTFeedback != "set" && chatGPTResponse != "" {
+        ; Add the new response to the list and ensure only 3 are kept
+        AddChatGPTResponse(chatGPTResponse)
+    }
+
+    Sleep(100)
+
+    FileAppend("Combined Prompt: " combinedPrompt "`n`n", "ChatGPT_log.txt")
     Sleep(100)
     if A_ThisHotkey != "^i" && resume != "" {
         ; Return the ChatGPT response
-        return lastChatGPTResponse
-    }
+        return chatGPTResponse
+    } else if (getGPTFeedback == "True" || getGPTFeedback == "true") {
+        return chatGPTResponse
+    } else if resume != "" {
+        return chatGPTResponse
+    } else return {inputText: inputText, specifiedPrompt: specifiedPrompt, combinedPrompt: combinedPrompt, chatGPTResponse: chatGPTResponse, maxIterations: maxIterations}
+}
 
-    finalResponse := ChatGPT_Loop( , "", combinedPrompt, chatGPTResponse, 5)  ; Loop 5 times
-    return finalResponse
+
+
+; Separate function to handle feedback interactions
+ChatGPT_FeedbackInteraction(combinedPrompt, iterationCount, inputText, specifiedPrompt, chatGPTResponse) {
+
+    ; Perform the feedback interaction without affecting the main logic
+    feedbackPrompt := "What is great and what is bad about the most recent ChatGPT response? Does the response accurately meet the prompt's needs and goals? If you make any corrections, please provide the corrections."
+    
+    ; Call ChatGPT interaction for feedback
+    feedbackResponse := ChatGPT_Interaction(inputText,specifiedPrompt "`n`n" feedbackPrompt "`n`n",, combinedPrompt, chatGPTResponse,,iterationCount, getGPTFeedback := "True")
+
+    ; Return feedback response to be added to the combinedPrompt
+    return feedbackResponse
 }
 
 ; ChatGPT interaction loop function
-ChatGPT_Loop(inputText := "", specifiedPrompt := "", combinedPrompt := "", chatGPTResponse := "", maxIterations := 5) {
-    if specifiedPrompt != "" {
-        combinedPrompt := specifiedPrompt . inputText  ; Start with the initial combined prompt
-    } else if combinedPrompt != "" {
-        combinedPrompt := combinedPrompt . chatGPTResponse  ; Start with the initial combined prompt
-    }
-    
-    iterationCount := 2
+ChatGPT_Loop(inputText := "", specifiedPrompt := "", combinedPrompt := "", chatGPTResponse := "", maxIterations := 5, iterationCount := 2) {
 
     ; Loop until the maximum number of iterations
-    while iterationCount <= maxIterations {
-        ; Call ChatGPT_Interaction and get the response
-        chatGPTResponse := ChatGPT_Interaction(,,,combinedPrompt)
-
-        ; Show the combined prompt for debugging (optional)
-        MsgBox("Iteration " iterationCount ": " combinedPrompt)
-
-        FileAppend("Question" iterationCount ": " combinedPrompt "`n`nChatGPT response: " chatGPTResponse "`n`n", "ChatGPT_log.txt")
-
+    while iterationCount < maxIterations + 1 {
         ; Append the response to the combined prompt for the next iteration
-        combinedPrompt .= "`n" chatGPTResponse  ; Append response with a newline
+        ;combinedPrompt .= "`n ChatGPTResponse " iterationCount - 1 ": " chatGPTResponse "`n"
 
-        ; Increment the loop count
+        ; Call ChatGPT_Interaction and get the response for the next iteration
+        holdInteractionResponse := ChatGPT_Interaction(inputText,specifiedPrompt,,combinedPrompt,,maxIterations,iterationCount)
+        chatGPTResponse := holdInteractionResponse.chatGPTResponse
+        if Mod(iterationCount, 5) = 0 && iterationCount != maxIterations {
+            FileAppend("`n------------------------------------`nChatGPT response: `n" chatGPTResponse "`n`n`n", "ChatGPT_Debug_Log.txt")
+            FileAppend("`n------------------------------------`nChatGPT response: `n" chatGPTResponse "`n`n`n", "verbose_debug_log.txt")
+            FileAppend("`n------------------------------------`nChatGPT response: `n" chatGPTResponse "`n`n`n", "ChatGPT_Debug_Log_Response.txt")
+        }
+
+        ; Provide feedback every second iteration without resetting iterationCount
+        if Mod(iterationCount, 2) = 0 && iterationCount != maxIterations {
+            chatGPTFeedback := ChatGPT_FeedbackInteraction(combinedPrompt, iterationCount, inputText, specifiedPrompt, chatGPTResponse)
+        }
+
+        ; Increment the iteration count after each loop
         iterationCount++
     }
 
-    return chatGPTResponse
+    return {inputText: inputText,specifiedPrompt: specifiedPrompt,combinedPrompt: combinedPrompt,chatGPTResponse: chatGPTResponse,maxIterations: maxIterations}
 }
 
-CombineSpecifiedPrompt(inputText := "", specifiedPrompt := "", resume := "", combinedPrompt := "", chatGPTResponse := "") {
-    if resume != "" {
-        ; Combine prompt with additional information if provided
-        combinedPrompt := specifiedPrompt . resume . inputText
-
-        HandleClipboard(, combinedPrompt) ; Copy the combined prompt to the clipboard
-    } else if !IsObject(inputText) {
-        ;MsgBox("Input is not an object")
-        combinedPrompt := specifiedPrompt . inputText
-
-        HandleClipboard(, combinedPrompt) ; Copy the combined prompt to the clipboard
-    } else if IsObject(inputText) {
-        ;MsgBox("Input is an object")
-        combinedPrompt := specifiedPrompt . inputText.Value
-
-        HandleClipboard(, combinedPrompt) ; Copy the combined prompt to the clipboard
-    } else {
-        MsgBox("Invalid input. All input parameters must be a string or an object with a Value property.")
-    }
-
-    return combinedPrompt
-}
-
-; Function to wait for the new "Copy" button and copy ChatGPT's latest response
-WaitForNewCopyButtonAndCopy() {
-    ; Step 6: Look for the "Copy" button, but ensure it is the latest response
-    hwnd := ActivateChromeWindow()
-    rootElement := GetRootElement(hwnd)
-
-    ; Initialize a timeout counter and maximum wait time
-    maxWaitTime := 30000  ; 30 seconds max wait
-    interval := 500       ; Check every 500ms
-    elapsedTime := 0
-
-    while elapsedTime < maxWaitTime {
-        ; Try to find the latest "Copy" button in the chat
-        try {
-            copyButton := rootElement.FindFirst({ Name: "Copy", LocalizedType: "button" })
-        } catch {
-            copyButton := ""
-        }
-
-        ; Check if the copy button exists
-        if copyButton && IsObject(copyButton) {
-            try {
-                ; Scroll to the copy button and click it
-                copyButton.ScrollIntoView()
-                copyButton.Click()
-                Sleep(400)  ; Small delay to ensure the copying occurs
-
-                ToolTip("Copying the latest response from ChatGPT...")
-                SetTimer(() => ToolTip(""), -1000)  ; Clear the tooltip after 1 second
-
-                ; Return the response from the clipboard
-                ChatGPTResponse := A_Clipboard
-                Sleep(100)
-                CloseTabWithCheck(rootElement)
-                return ChatGPTResponse
-            } catch {
-                ; Handle any errors while interacting with the copy button
-                MsgBox("Error interacting with the Copy button.")
-                return false
-            }
-        }
-
-        ; Wait for the interval before checking again
-        Sleep(interval)
-        elapsedTime += interval
-    }
-
-    ; If the loop ends without finding the button, log the error
-    FileAppend("Failed to find the new Copy button within the timeout.`n", "ChatGPT_Debug_Log.txt")
-    return false
-}
-
-
-; Function to copy the latest response from ChatGPT
-CopyChatGPTResponse() {
-    global ChatGPTResponse
-    ; Call the wait function and return whether it was successful
-    ChatGPTResponse := WaitForNewCopyButtonAndCopy()
+ChatGPT(inputText := "", specifiedPrompt := "", resume := "", chatGPTResponse := "", maxIterations := 5, maxSets := 1, getGPTFeedback := "", noResponseFlag := false, functionSpecificPrompt := "") {
+    global holdInputText := inputText
+    global getInputText := false
     
-    if !ChatGPTResponse {
-        MsgBox("Failed to copy the response within the allowed time.")
+    if functionSpecificPrompt == "" {
+        functionSpecificPrompt := "
+        (
+        I need you to break down my complex question into a series of function-specific sub-prompts. Each sub-prompt should perform a unique action while covering the entire scope of that action. Focus on the broadest possible interpretation for each action so that the response is comprehensive. Please separate each sub-prompt with '; ' for easy processing.
+
+        Here's the list of actions to address:
+
+        Fact-Checking: Create a prompt to verify all factual information relevant to the question, ensuring accuracy.
+        Summarization: Formulate a prompt to summarize the key points, including any relevant nuances or details.
+        Contextual Analysis: Generate a prompt to explore the background, history, or broader context relevant to the question.
+        Logical Reasoning: Write a prompt that encourages the exploration of logical connections or causal relationships within the question's scope.
+        Comparative Evaluation: Create a prompt to compare and contrast the different aspects or perspectives related to the question.
+        Risk or Trade-Off Analysis: Develop a prompt that examines potential risks, trade-offs, or downsides.
+        Forecasting or Hypothetical Scenarios: Suggest a prompt to explore possible future outcomes or hypothetical situations based on the question.
+        Recommendation: Formulate a prompt to generate actionable insights or recommendations based on the analysis.
+
+        Please respond with only the list of sub-prompts, separated by '; ', ensuring each one comprehensively addresses its respective action.
+        Here is the question:
+        )"
     }
+    if getGPTFeedback == "true" || getGPTFeedback == "True" || getGPTFeedback == "set" || getGPTFeedback == "Set" || resume != "" {
+        finalResponse := HandleChatGPT(inputText, specifiedPrompt, resume, chatGPTResponse, maxIterations, maxSets, getGPTFeedback, noResponseFlag)
+        FileAppend("`n------------------------------------`nChatGPT response: `n" finalResponse "`n`n`n", "ChatGPT_Final_Function_Specific_Response.txt")
+     
+        return finalResponse
+    } else {
+        chatGPTResponse := functionSpecificPrompt
+        functionSpecificPrompts := HandleChatGPT(inputText, specifiedPrompt, resume, chatGPTResponse, 1, 1, getGPTFeedback, noResponseFlag)
 
-    return ChatGPTResponse
-}
+        functionSpecificPrompts := StrSplit(functionSpecificPrompts, "; ")
 
+        responses := []
 
-HandleOpenChatGPT() {
-     ; Retrieve all windows that match "chrome.exe"
-     chromeWindows := WinGetList("ahk_exe chrome.exe")
-     ; Loop through each Chrome window
-     for window in chromeWindows {
-         ; Get the title of the window
-         winTitle := WinGetTitle(window)
- 
-         ; Check if the title contains "Visual Studio Code"
-         if InStr(winTitle, "Visual Studio Code") {
-             continue  ; Skip this window if it contains "Visual Studio Code"
-         }
- 
-         ; If not, activate the window
-         WinActivate(window)
-         break  ; Stop after activating the first matching window
-     }
- 
-     ; Step 2: Open a new browser tab
-     Send("^t")  ; Ctrl+T to open new tab
-     Sleep(500)  ; Wait for the tab to open
- 
-     ; Step 3: Navigate to ChatGPT
-     SendText("https://chatgpt.com/?model=gpt-4o-mini `n")  ; Enter URL and hit Enter
-     WinWaitActive("ChatGPT - Google Chrome") ; Wait for ChatGPT to open
+        for each, subPrompt in functionSpecificPrompts {
+            if inputText == "" {
+                holdInputText := subPrompt
+                getInputText := true
+            } else {
+                inputText := subPrompt . inputText
+            }
+            response := HandleChatGPT(inputText, specifiedPrompt, resume, subPrompt, maxIterations, maxSets, getGPTFeedback, noResponseFlag)
+            responses.Push(response)
+        }
 
-     if hwnd := WinExist("ahk_exe ChatGPT - Google Chrome") {
-         WinActivate
-         WinWaitActive("ahk_exe ChatGPT - Google Chrome")
-         return hwnd
-     } else {
-         ToolTip("ChatGPT window not found.")
-         SetTimer () => ToolTip(""), -1000
-         ExitApp
-     }
+        combinedResponses := ""
+        for each, resp in responses {
+            combinedResponses .= resp "`n"  ; Append each response with a newline for clarity
+        }
+
+        synthesisPrompt := ""
+        synthesisPrompt .= "Based on the detailed responses to each specific aspect of my question, please synthesize a single, cohesive response. "
+        synthesisPrompt .= "Here are the function-specific responses:`n`n"
+        synthesisPrompt .= combinedResponses
+        synthesisPrompt .= "`nNow, using this information, write a comprehensive answer to the main question: '" holdInputText "'. "
+        synthesisPrompt .= "Ensure that you maintain a logical flow, highlight key insights, and provide a holistic perspective."
+
+        finalResponse := HandleChatGPT( " ", synthesisPrompt, resume, combinedResponses, maxIterations, maxSets, getGPTFeedback, noResponseFlag)
+        FileAppend("`n------------------------------------`nChatGPT response: `n" finalResponse "`n`n`n", "ChatGPT_Final_Function_Specific_Response.txt")
+
+        return finalResponse
+    }
+    
 }
 
 ; Function to handle the ChatGPT lookup interaction
-ChatGPT(inputText := "", specifiedPrompt := "", resume := "") {
-    ; Initialize flags as false by default
-    isHotkeyTriggered := false
-    isTextHighlighted := false
-    inputText := ""
+HandleChatGPT(inputText := "", specifiedPrompt := "", resume := "", chatGPTResponse := "", maxIterations := 5, maxSets := 1, getGPTFeedback := "", noResponseFlag := false) {
+    global noResponsesFlag := noResponseFlag
+    global paidGPTFlag := false
+    global paidGPTFlagLocked := false
+    global finalResponse := {}, holdLoopResponse := {}, holdInteractionResponse := {}, holdInputText := ""
+    global chatGPTResponses := []
     combinedPrompt := ""
+    logFile := "ChatGPT_Debug_Log.txt"
+    global holdInputText, getInputText
 
-    ; Check if the function was triggered by a hotkey, specifically this script's name
-    if A_ThisHotkey == "^i" {
-        isHotkeyTriggered := true
+    if getGPTFeedback == "true" || getGPTFeedback == "True" {
+        maxIterations := 1
     }
 
-    MsgBox("isHotkeyTriggered: " isHotkeyTriggered)
+    if chatGPTResponse != "" {
+        AddChatGPTResponse(chatGPTResponse)
+        chatGPTResponse := ""
+    }
 
-    ; If the script was triggered by a hotkey and no input was passed, check for highlighted text
-    if isHotkeyTriggered == true && inputText == "" {
-        ; Try to grab highlighted text from any non-File Explorer windows
-        inputText := CheckForHighlightedText()
+    if (resume != "" && specifiedPrompt == "") {
+        specifiedPrompt := resumeSpecifiedPrompt
+        ShowToolTipWithTimer("Using the specifiedPrompt.")
+        FileAppend("Using the following specifiedPrompt: " specifiedPrompt "`n", logFile)
+        FileAppend("Using the following specifiedPrompt: " specifiedPrompt "`n", verboseLogFile)
+    } else if (resume == "" && specifiedPrompt == "") {
+        specifiedPrompt := defaultSpecifiedPrompt
+        ShowToolTipWithTimer("Using the default specifiedPrompt.")
+        FileAppend("Using the following default specifiedPrompt.`n", logFile)
+        FileAppend("Using the following default specifiedPrompt.`n", verboseLogFile)
+    }
 
-        if inputText != "" {
-            isTextHighlighted := true
-        } else {
-            ToolTip("No highlighted text found in non-File Explorer windows.")
-            SetTimer(() => ToolTip(""), -1000)
-            Sleep(1000)
+    if inputText == "" {
+        updatedParams := GetGPTInput(inputText, specifiedPrompt, resume, chatGPTResponse, maxIterations, maxSets)
+        if !updatedParams {
+            FileAppend("Failed to get valid input.", logFile)
+            FileAppend("Failed to get valid input.", verboseLogFile)
+            return false 
         }
+        inputText := updatedParams.inputText
+        specifiedPrompt := updatedParams.specifiedPrompt
+        maxIterations := updatedParams.maxIterations
+        maxSets := updatedParams.maxSets
+    }
+    if getInputText {
+        inputText := holdInputText
+        getInputText := false
+    } else {
+        holdInputText := inputText
     }
 
-    MsgBox("isTextHighlighted: " isTextHighlighted)
-
-    ; If no input text is found (from highlighted text or passed directly), prompt the user
-    if isHotkeyTriggered == true && isTextHighlighted == false && inputText == "" {
-        ;inputText := ""
-        inputText := InputBox("No highlighted text, enter your input text manually:", "ChatGPT Interaction Script")
-        ; Check if InputBox was cancelled (Result will be "Cancel")
-        if inputText.Result == "OK" {
-            inputText := inputText.Value  ; Get the input text from the Value property
-        } else {
-            MsgBox("Input was cancelled.")
-            return  ; Exit if the input was cancelled
-        }
-    }
-
-    ; Final debugging: Check what inputText contains at this stage
-    ;MsgBox("Final input: '" inputText "'")
-
-    ; Define your input text, prompt, and optional resume here
-    if resume != "" {
-        specifiedPrompt := "Using this resume, directly and succinctly answer the following question in first-person using only one or two sentences. Resume: "
-    } else specifiedPrompt := "Refine, improve, and execute while preserving the original meaning and intent: "
+    ; Call the main function and retrieve ChatGPT's finalResponse
+    finalStrResponse := HandleSets(inputText, specifiedPrompt, resume, combinedPrompt, ChatGPTResponse, maxIterations, maxSets, getGPTFeedback)
     
+    FileAppend("`n------------------------------------`nChatGPT response: `n" finalStrResponse "`n`n`n", "ChatGPT_Final_Set_Response.txt")
+    return finalStrResponse
+}
 
-    ; Call the main function and retrieve ChatGPT's response
-    iteratedResponse := ChatGPT_Interaction(inputText, specifiedPrompt, resume)
+HandleSets(inputText, specifiedPrompt, resume, combinedPrompt, ChatGPTResponse, maxIterations, maxSets, getGPTFeedback) {
+    logFile := "ChatGPT_Debug_Log.txt"
+    global iterationCount := 1
+    global currentSet := 1
+    global holdInputText := ""
+    global chatGPTSetResponses, chatGPTResponses
+    finalResponse := ""
+    while currentSet < maxSets + 1 {
+        ; Call the main function and retrieve ChatGPT's finalResponse
+        holdInteractionResponse := ChatGPT_Interaction(inputText, specifiedPrompt, resume, combinedPrompt, chatGPTResponse, maxIterations, iterationCount, getGPTFeedback)
+        if !IsObject(holdInteractionResponse) {
+            return holdInteractionResponse
+        }
 
-    ; Show response in a message box or return to another script
-    ;MsgBox(chatGPTResponse)
-    return iteratedResponse
+        inputText := holdInteractionResponse.inputText
+        specifiedPrompt := holdInteractionResponse.specifiedPrompt
+        
+        combinedPrompt := holdInteractionResponse.combinedPrompt
+        holdInputText := holdInteractionResponse.inputText
+
+        if (A_ThisHotkey != "^i" && resume != "") || getGPTFeedback == "True" || getGPTFeedback == "true" {
+            FileAppend("`n`nSingle-iteration completed. Returning finalResponse: " chatGPTResponse "`n`n", logFile)
+            FileAppend("`n`nSingle-iteration completed. Returning finalResponse: " chatGPTResponse "`n`n", verboseLogFile)
+            return holdInteractionResponse
+        }
+        ;combinedPrompt := combinedPrompt "`n" specifiedPrompt "`n" inputText "`n ChatGPT Response " iterationCount ": " chatGPTResponse "`n"
+        iterationCount++
+
+        ; Call the loop function and retrieve ChatGPT's finalResponse
+        holdLoopResponse := ChatGPT_Loop(inputText, specifiedPrompt, combinedPrompt, chatGPTResponse, maxIterations)
+        inputText := holdLoopResponse.inputText
+        specifiedPrompt := holdLoopResponse.specifiedPrompt
+        try {
+            chatGPTResponse := holdLoopResponse.chatGPTResponse
+            AddChatGPTSetResponse(chatGPTResponse)
+        } catch {
+            chatGPTResponse := ""
+        }
+        maxIterations := holdLoopResponse.maxIterations
+
+        FileAppend("`n------------------------------------`nChatGPT Set response: `n" chatGPTResponse "`n`n`n", "ChatGPT_Debug_Log.txt")
+        FileAppend("`n------------------------------------`nChatGPT Set response: `n" chatGPTResponse "`n`n`n", "verbose_debug_log.txt")
+        FileAppend("`n------------------------------------`nChatGPT Set response: `n" chatGPTResponse "`n`n`n", "ChatGPT_Debug_Log_Response.txt")
+
+        optimalResponseObj := ChatGPT_GetOptimalInteraction(inputText, specifiedPrompt, maxSets)
+        optimalResponseStr := optimalResponseObj.chatGPTResponse
+        optimalIndex := RegExMatchAll(optimalResponseStr, "1|2")
+        optimalSet := optimalIndex[1][0]
+
+        finalResponse := chatGPTResponses[optimalSet]
+
+        if currentSet == 1 {
+            AddChatGPTSetResponse(chatGPTResponses[optimalSet])
+            AddChatGPTResponse(chatGPTResponses[optimalSet])
+            FileAppend("`n------------------------------------`nChatGPT Optimal Set Response: `n" ChatGPTResponses[optimalSet] "`n`n`n", "ChatGPT_Debug_Log_Final_Response.txt")
+        } else {
+            AddChatGPTSetResponse(chatGPTSetResponses[optimalSet])
+            AddChatGPTResponse(chatGPTSetResponses[optimalSet])
+            FileAppend("`n------------------------------------`nChatGPT Optimal Set Response: `n" ChatGPTSetResponses[optimalSet] "`n`n`n", "ChatGPT_Debug_Log_Final_Response.txt")
+        }          
+
+        currentSet++
+    }
+
+    return finalResponse
+}
+
+; Function to get the optimal Set response
+ChatGPT_GetOptimalInteraction(inputText, specifiedPrompt, maxSets) {
+    global optimalPrompt
+
+    optimalResponse := ChatGPT_Interaction(inputText, optimalPrompt "`n" specifiedPrompt,,,, 1, 1, "set")
+    
+    return optimalResponse
 }
 
 ; Initial hotkey
 ^i:: {
-    global iterationCount := 1  ; Initialize the iteration count to 1
-
-    ; Define your input text here (leave empty if you want to prompt the user)
-    inputText := ""
-
-    ; Call the ChatGPT function
-    ChatGPT(inputText)
+    if !ChatGPT() {
+        ShowToolTipWithTimer("Script Failed. Press Ctrl+i to try again." , 10000)
+    }
+    ShowToolTipWithTimer("Script Completed. Press Ctrl+Shift+I to iterate 5 more times" , 10000)
 }
 
 ; Hotkey for Ctrl + Alt + I to iterate 5 more times based on the last ChatGPT response
-^!i:: {
-    if (lastChatGPTResponse != "") {
+^!I:: {
+    if chatGPTResponses != [] {
         ; Iterate 5 more times on the last response
-        finalResponse := ChatGPT_Loop(, "", lastChatGPTResponse, lastChatGPTResponse, 5)
-        MsgBox("Final Iterated Response: " finalResponse)
+        finalResponse := ChatGPT(holdInputText,,,)
+        FileAppend("Final Iterated Response: " finalResponse, "ChatGPT_Debug_Log.txt")
+        return finalResponse
     } else {
-        MsgBox("No previous response to iterate.")
+        ShowToolTipWithTimer("No previous response to iterate.",,2000)
+        return finalResponse
     }
 }
-
-ESC::ExitApp ; Exit the script
-
-^p::Pause -1  ; Press Ctrl+P to pause/resume the script

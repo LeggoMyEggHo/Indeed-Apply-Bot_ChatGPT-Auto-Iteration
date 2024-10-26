@@ -1,61 +1,84 @@
 ﻿#Requires AutoHotkey v2.0
-#Include %A_ScriptDir%\Lib\UIA.ahk
-#Include ShowToolTipWithTimer.ahk
-#SingleInstance Force
+
+#Include ..\Helper_Functions\CheckAndSetHotkey\CheckAndSetHotkey.ahk
+#Include ..\UIA.ahk
+#Include ..\Helper_Functions\ShowToolTipWithTimer.ahk
+#Include ..\AHK-v2-libraries-main\Lib\Array.ahk
+#Include ..\IndeedApply\GetCompanyNames.ahk
+
+#SingleInstance
 
 ; Hotkey to activate the script manually (Ctrl+Shift+Q)
 ^q:: {
     CheckCompanies()  ; Call the main function
 }
 
-CheckCompanies(companies := "") {
-    global keywordList := ["fun", "great pay"]  ; Keywords to search for
-    global excludeList := ["micromanage", "long hours"]  ; Keywords to exclude
+; Main function to search for keywords in the UI elements of each company's profile
+CheckCompanies(companies := [], keywordList := [], excludeList := []) {
+    global defaultKeywordList := ["fun", "great pay"]  ; Keywords to search for
+    global defaultExcludeList := ["micromanage", "long hours"]  ; Keywords to exclude
     logFile := "company_review_log.txt"  ; File to log results
-    global logFileAppended := false ; Flag to check if FileAppend occurred during the script
+
+    if keywordList != [] {
+        for each, item in defaultKeywordList {
+            keywordList.Push(item)
+        }
+    } else {
+        keywordList := defaultKeywordList
+    } 
+
+    if excludeList != [] {
+        for each, item in defaultExcludeList {
+            excludeList.Push(item)
+        }
+    } else {
+        excludeList := defaultExcludeList
+    }
+    ;global companiesStr := ""
+    ;for company in companies {
+    ;    companiesStr .= company
+    ;}
+    ;MsgBox("Companies: " companiesStr)
 
     ; If no companies are passed, show the ToolTip and prompt user for input
-    if companies = ""
-    {
-        ShowToolTipWithTimer("No companies passed. Press 'A' to review all companies or 'H' to review the highlighted company.", 7500)
-        choice := WaitForUserInput()  ; Wait for user input ('a' or 'h')
-
-        if choice = "a" || choice = "A"  ; Option 1: Review all companies
-        {
-            companies := GetParentPathCompanyList()  ; Generate the company list using the parentPath
-        }
-        else if choice = "h" || choice = "H"  ; Option 2: Review the highlighted company
-        {
-            companies := [GetHighlightedCompany()]
-        }
-        else
-        {
-            MsgBox("Invalid choice. Exiting script.")
-            ExitApp
-        }
+    if GetArrayLength(companies) = 0 {
+        if A_ThisHotkey == "^j" {
+            ;MsgBox("No highlighted text found. Grabbing all companies on the job search page.")
+            companies := GetCompanyNames()
+        } else if companies := [GetHighlightedText()] != "" {
+            ;MsgBox("Found highlighted text. Using highlighted text as the company list.")
+            ShowToolTipWithTimer("Found highlighted text. Using highlighted text as the company list.", 1000, 1000)
+        } else {
+            ;MsgBox("No hotkeys or highlighted text found. Grabbing all companies on the job search page.")
+            companies := GetCompanyNames()
+        } 
+    } else {
+        MsgBox("Using provided company list.")
     }
 
     ; Process each company and review its related pages
     for company in companies
     {
         company := CleanCompanyName(company)  ; Format company name for the URL
-        ProcessCompany(company, logFile)
+        companies := ProcessCompany(company, logFile, keywordList, excludeList)
     }
 
     ; If script is run manually, open the log file automatically for review
-    if A_ThisHotkey == "^q"
-    {
+    if A_ThisHotkey == "^q" {
         ; Open the log file if FileAppend ocurred during the script
-        if logFileAppended {
+        if FileExist(logFile) {
             Run(logFile)
         }
+    } else if A_ThisHotkey == "^j" {
+        return companies
     }
 }
 
 ; Function to process each company's Indeed pages
-ProcessCompany(company, logFile) {
+ProcessCompany(company, logFile, keywordList, excludeList) {
     baseUrl := "https://www.indeed.com/cmp/" company "/"
     relatedUrls := ["", "about", "reviews", "faq", "salaries"]  ; Related subpages to search
+    companies := []
 
     for subpage in relatedUrls
     {
@@ -71,12 +94,15 @@ ProcessCompany(company, logFile) {
         results := SearchKeywordsInElements(keywordList, excludeList)
 
         ; Log the results if any keywords are found
-        if results != ""
-        {
-            FileAppend("Company: " company "`nURL: " fullUrl "`n" results "`n`n", logFile)
-            global logFileAppended := true  ; Set the flag to true if FiledAppend occurs
+        if results != "" {
+            FileAppend("Company: " company "`nURL: " fullUrl "`nResults: " results "`n`n", logFile)
+            companies.Push(company)
         }
+
+        Send("{Ctrl+W}")  ; Close the tab
     }
+
+    return companies
 }
 
 ; Function to search for keywords in the UI elements on the current window
@@ -121,9 +147,29 @@ SearchKeywordsInElements(keywordList, excludeList) {
                 }
             }
         }
+
+        excludeFlag := false
+        notExcluded := true
+        for exclude in excludeList
+        {
+            if InStr(elementName, exclude)
+            {
+                excludeFlag := true
+                break
+            }
+        }
+
+        if excludeFlag
+        {
+            notExcluded := false
+        }
     }
-    
-    return foundText
+
+    if notExcluded {
+        return foundText
+    } else {
+        return ""
+    }
 }
 
 ; Function to clean up the company name for URL use
@@ -132,56 +178,25 @@ CleanCompanyName(company) {
     return StrReplace(company, " ", "-")
 }
 
-; Function to retrieve the highlighted company name
-GetHighlightedCompany() {
-    clipboardBackup := ClipboardAll()  ; Backup current clipboard
-    A_Clipboard := ""  ; Clear the clipboard
-    Send("^c")  ; Copy the highlighted text
-    Sleep(100)  ; Wait for clipboard to update
-    highlightedText := A_Clipboard
-    A_Clipboard := clipboardBackup  ; Restore the clipboard
-
-    ; Remove any trailing spaces or newlines
-    highlightedText := Trim(highlightedText)
-    return highlightedText
-}
-
-; Function to retrieve the list of companies from the parentPath list
-GetParentPathCompanyList() {
-    ; Simulate the list of companies by appending "Kr" to the parentPath
-    parentPaths := ["VR87", "VR87q", "VR87r", "VR87s", "VR87t", "VR87v", "VR87w", "VR87x", "VR87y", "VR87z"]
-    companyList := []
-
-    for path in parentPaths
-    {
-        companyList.Push(path "Kr")
-    }
-
-    return companyList
-}
-
 ; Function to wait for user input ('a' for review all, 'h' for review highlighted)
 WaitForUserInput() {
-    Loop {
+    
+    Rehook1:
+    {
+        ttMessage := "Press 'a' to review all companies or 'h' to review the highlighted company."
         ; Wait for the next key press within 7.5 seconds
-        ih := InputHook("L1 T7.5 V")
+        ih := InputHook("L1 T7.5 V", , "a,h")
         ih.Start()
+        ShowToolTipWithTimer(ttMessage, 7500)
+
         ih.Wait()
 
-        SubKey := ih.Input
-        if (SubKey = "") {
-            ToolTip("")  ; Turn off the tooltip if input time expires
-            break
-        }
-
-        ; Validate the key press
-        if InStr("ah", SubKey) {
-            return SubKey  ; Return the valid key press
+        if ih.EndReason == "Match" {
+            return ih.Match
+        } else {
+            MsgBox("Invalid input! " ttMessage)
+            goto('Rehook1')
         }
     }
-    return ""
+    
 }
-
-ESC:: ExitApp ; Press ESC to exit the script
-
-^p:: Pause -1  ; Press Ctrl+P to pause/resume the script

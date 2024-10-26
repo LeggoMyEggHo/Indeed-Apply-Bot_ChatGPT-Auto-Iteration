@@ -9,37 +9,39 @@ RandomDelay(min := 200, max := 800) {
 }
 
 ; Function to move the mouse with random variability
-RandomMouseMove(x, y, rangeX := 10, rangeY := 4, speed := 10) {
-
-    ; Randomize movement within a given range
-    moveX := Random(x - rangeX, x + rangeX)
-    moveY := Random(y - rangeY, y + rangeY)
+RandomMouseMove(x, y, elementRight, elementBottom, rangeX := elementRight - x / 2 - 10, rangeY := elementBottom - y / 2 - 10, speed := 10) {
+    if elementRight < x || elementBottom < y {
+        elementRight := elementRight + x
+        elementBottom := elementBottom + y
+        rangeX := elementRight / 2
+        rangeY := elementBottom / 2
+    }
+    averageX := (elementRight - x) / 2 + x
+    averageY := (elementBottom - y) / 2 + y
+    
+    ; Ensure the random movement stays within the element's boundaries
+    ; Calculate minimum and maximum X/Y values based on range and element boundaries
+    minX := Max(averageX - rangeX, x)  ; Ensure minimum X stays within the element's left boundary
+    maxX := Min(averageX + rangeX, elementRight)  ; Ensure maximum X stays within the element's right boundary
+    minY := Max(averageY - rangeY, y)  ; Ensure minimum Y stays within the element's top boundary
+    maxY := Min(averageY + rangeY, elementBottom)  ; Ensure maximum Y stays within the element's bottom boundary
+    ;MsgBox("Moving mouse non-randomly to X=" minX " Y=" minY " with rangeX=" rangeX " and rangeY= " rangeY)
+    
+    ; Randomize movement within the calculated boundary range
+    moveX := Round(Random(minX, maxX))
+    moveY := Round(Random(minY, maxY))
     
     ; Debugging: Log the calculated random movement positions
-    ;MsgBox("Moving mouse to X=" moveX " Y=" moveY " with rangeX=" rangeX " and rangeY= " rangeY)
+    ;MsgBox("Moving mouse randomly to X=" moveX " Y=" moveY " with rangeX=" rangeX " and rangeY= " rangeY)
 
     ; Get current mouse position
     MouseGetPos(&currentX, &currentY)
-    ;MsgBox("Before Moving: Current Mouse Position X=" currentX ", Y=" currentY)
     
     ; Move the mouse to the new position with a specific speed
     SendMode("Event")
     MouseMove(moveX, moveY, speed)
-    
-    ; Wait until the mouse reaches the destination
-    While (true) {
-        MouseGetPos(&currentX, &currentY)
-        
-        ; Break the loop if the mouse has reached the destination
-        If (currentX = moveX && currentY = moveY)
-            Break
-
-        ; Sleep for a short time before checking again
-        Sleep(10)  ; Adjust the check interval as needed
-    }
-    
     ; Debugging: Log the final mouse position after movement
-    MouseGetPos(&currentX, &currentY)
+    ;MouseGetPos(&currentX, &currentY)
     ;MsgBox("After Moving: Final Mouse Position X=" currentX ", Y=" currentY)
 }
 

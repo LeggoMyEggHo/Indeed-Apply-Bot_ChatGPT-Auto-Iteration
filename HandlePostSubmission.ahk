@@ -1,7 +1,11 @@
 ﻿#Requires AutoHotkey v2.0
-#Include %A_ScriptDir%\Lib\UIA.ahk
-#Include Utility.ahk
+#Include ..\UIA.ahk
+#Include ..\Helper_Functions\Utility.ahk
 #SingleInstance Force
+
+if FileExist("HandlePostSubmission_debug_log.txt") {
+    FileDelete("HandlePostSubmission_debug_log.txt")
+}
 
 ; Function to handle the post-application submission actions
 HandlePostSubmission(rootElement) {
@@ -25,6 +29,7 @@ HandlePostSubmission(rootElement) {
             finishTestExists := false
         }
     } catch {
+        finishTestBtn := ""
         ;MsgBox("currentElement: " currentElement)
         finishTestExists := false
     }
@@ -41,6 +46,7 @@ HandlePostSubmission(rootElement) {
             finishExists := false
         }
     } catch {
+        finishBtn := ""
         ;MsgBox("currentElement: " currentElement)
         finishExists := false
     }
@@ -58,6 +64,7 @@ HandlePostSubmission(rootElement) {
             reviewAndShareExists := false
         }
     } catch {
+        reviewAndShareBtn := ""
         ;MsgBox("currentElement: " currentElement)
         reviewAndShareExists := false
     }
@@ -69,7 +76,7 @@ HandlePostSubmission(rootElement) {
 
     ; Check if the script should stop early due to failure
     if !success {
-        currentParentElement += 1
+        currentParentElement++
         return success
     }
 
@@ -83,7 +90,6 @@ HandlePostSubmission(rootElement) {
         radioButtonsText := rootElement.FindAll({LocalizedType: "text"})
 
         for radioButtonText in radioButtonsText {
-            currentParentElement := radioButtonText  ; Track the current element
             
             if InStr(radioButtonText.Name, "Share previous result") {
                 FileAppend("Found 'Share previous result' text element: " radioButtonText.Name "`n", "HandlePostSubmission_debug_log.txt")
@@ -121,12 +127,16 @@ HandlePostSubmission(rootElement) {
         FileAppend(errorMessage "`n" errorLine "`n" errorExtra "`n" errorFile "`n" errorWhat "`n", "HandlePostSubmission_debug_log.txt")
     }
 
-    try {
+    ;try {
         Sleep(500)
         ; Now try to click the "Continue" button
-        continueBtn := rootElement.FindFirst({Name: "Continue", LocalizedType: "button"})
+        try {
+            continueBtn := rootElement.FindFirst({Name: "Continue", LocalizedType: "button"})
+        } catch {
+            continueBtn := ""
+        }
         
-        if !continueBtn {  ; If no button is found, log and return
+        if continueBtn == "" {  ; If no button is found, log and return
             FileAppend("Continue button not found.`n", "JobApplicationQA_debug_log.txt")
             return false
         }
@@ -138,72 +148,50 @@ HandlePostSubmission(rootElement) {
             if continueBtn.IsEnabled {
                 continueBtn.Click("left")
                 Sleep(5000)
-                doneButton := rootElement.FindFirst({Name: "done", LocalizedType: "button"})
-                if doneButton {
+                try {
+                    doneButton := rootElement.FindFirst({Name: "done", LocalizedType: "button"})
+                } catch {
+                    doneButton := ""
+                }
+                if doneButton != "" {
+                    ClickElementByPath(doneButton, rootElement)
                     success := true
                     FileAppend("Done button found. Closing the tab.`n", "JobApplicationQA_debug_log.txt")
-                    CloseTabWithCheck(rootElement)
                 } else {
                     success := false
                     FileAppend("Done button not found. Closing the tab.`n", "JobApplicationQA_debug_log.txt")
-                    CloseTabWithCheck(rootElement)
                 }
             } else {
                 FileAppend("Continue button is disabled. Closing the tab.`n", "JobApplicationQA_debug_log.txt")
+                MsgBox("Continue button is disabled. Closing the tab.`n")
                 Sleep(2000)  ; Give time to read
-                SendInput("{Ctrl down}w{Ctrl up}")  ; Close the current tab
-                Sleep(100)
-                ; Try to locate the "Leave" button
-                try {
-                    leaveButton := rootElement.FindFirst({
-                        Type: "Button",
-                        LocalizedType: "button",
-                        Name: "Leave"
-                    })
-
-                    if leaveButton {
-                        leaveButton.ScrollIntoView()
-                        RandomDelay(100, 300)
-                        SendInput("{Space}")
-                        RandomDelay(500, 1000)
-                        SetTimer(() => ToolTip(""), -1000)
-                    } else {
-                        ToolTip("No confirmation needed. Tab closed.")
-                        SetTimer(() => ToolTip(""), -1000)
-                    }
-                } catch {
-                    ToolTip("No confirmation needed. Tab closed.")
-                    SetTimer(() => ToolTip(""), -1000)
-                }
                 success := false
             }
         } else {
             FileAppend("Continue button not found. Closing the tab.`n", "JobApplicationQA_debug_log.txt")
-            Sleep(2000)
-            SendInput("{Ctrl down}w{Ctrl up}")
-            Sleep(100)
-            SendInput("{Space}")
+            CloseTabWithCheck(rootElement)
             success := false
         }
 
-    } catch as e {
-        ; Enhanced error reporting
-        errorMessage := "Error handling the Continue button: " e.Message
-        errorLine := "Line: " e.Line
-        errorExtra := "Extra Info: " e.Extra
-        errorFile := "File: " e.File
-        errorWhat := "Error Context: " e.What
-        
+    ;} catch as e {
+    ;    ; Enhanced error reporting
+    ;    errorMessage := "Error handling the Continue button: " e.Message
+    ;    errorLine := "Line: " e.Line
+    ;    errorExtra := "Extra Info: " e.Extra
+    ;    errorFile := "File: " e.File
+    ;    errorWhat := "Error Context: " e.What
+    ;    
         ; Display detailed error information
-        MsgBox(errorMessage "`n" errorLine "`n" errorExtra "`n" errorFile "`n" errorWhat)
-        
+    ;    MsgBox(errorMessage "`n" errorLine "`n" errorExtra "`n" errorFile "`n" errorWhat)
+    ;    
         ; Log the detailed error information
-        FileAppend(errorMessage "`n" errorLine "`n" errorExtra "`n" errorFile "`n" errorWhat "`n", "HandlePostSubmission_debug_log.txt")
-    }
+    ;    FileAppend(errorMessage "`n" errorLine "`n" errorExtra "`n" errorFile "`n" errorWhat "`n", "HandlePostSubmission_debug_log.txt")
+    ;}
 
     ; If success is false, increment currentParentElement to ensure only one increment
     if !success {
-        currentParentElement += 1
+        currentParentElement++
+        return false
     }
 
     return success
