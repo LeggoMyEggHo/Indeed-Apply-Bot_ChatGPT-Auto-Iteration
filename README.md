@@ -1,5 +1,6 @@
 # Indeed-Apply-Bot_ChatGPT-Auto-Iteration
 **Indeed Auto Apply / Check Reviews**
+
 **ChatGPT Automatic Iteration - get the best results per prompt**
 
 Frustrated that Indeed's "Easily Apply" has slowly turned into the opposite of easy? Welcome aboard.
