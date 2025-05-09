@@ -1,8 +1,17 @@
-# EZapp
-Indeed Easy Search, Review, &amp; Apply
+# Indeed EZ Apply Bot
+Indeed Easy Search, Check Reviews, &amp; Apply
 
-ctrl + e for ini.config
+**This script currently only works on Windows PC + Chrome browser**
+**Cover Letters are currently not supported**
 
-ctrl + j for job
+[ctrl + j] for job > "a" = regular applying; "r" to check reviews for companies on that page; "o" to do both automatically (filters out companies with clearly bad reviews, may cause errors)
 
-ctrl + i for ChatGPT Iterations
+[ctrl + i] for ChatGPT Iterations (works with apply bot and works as standalone)
+
+[ctrl + e] for editing ini.config manually (first-time users can directly use "ctrl + j" without the need to add this file manually)
+
+[ctrl + u] for UIA.Viewer() [Credits & Courtesy to Descolada, including UIAv2]
+
+[Esc] (escape) to exit
+[alt + r] to reload
+[ctrl + p] to pause the script (press again to unpause)
