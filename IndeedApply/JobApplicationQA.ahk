@@ -13,29 +13,33 @@ global logFile := "JobApplicationQA_debug_log.txt"
 if FileExist(logFile) {
     FileDelete(logFile)
 }
-global resume := "Brian Williams 4055000230 bachisum@gmail.com Ardmore, OK 73401 Authorized to work in the US for any employer Work experience Sales Development Representative Operatix - Remote February 2023 to August 2024 Collaborated with Regional Sales Managers to design and execute strategic sales campaigns, resulting in a 40% increase in public sector engagement. Leveraged SalesLoft, ZoomInfo, and 6Sense to enhance lead generation strategies, directly contributing to a 35% increase in business revenue. Received further Salesforce training to adeptly convert both cold and warm MQLs to SALs, resulting in a Customer Lifetime Value exceeding $2 million through the identification and fulfillment of client needs via targeted CoreView solutions. Sales Development Representative VaVende - Remote August 2020 to February 2023 Implemented innovative marketing and sales training techniques, reducing training costs by approximately 50% Sustained high productivity, averaging 30 calls, emails, and texts per hour Scheduled up to 18 appointments daily, achieving an appointment-to-sales conversion rate of up to 40% Pro Services Sales Specialist Lowe's - Stillwater, OK February 2020 to August 2020 Consulted on B2B, retail, and special order services, nurturing client relationships and increasing monthly revenue by 25% Identified client needs and promoted additional products and services, driving business growth Independent Contractor Self Employed Contractor - Stillwater, OK February 2018 to February 2020 Conducted compliance audits for franchises with 1-25 employees, identifying regulatory weaknesses and implementing strategic improvements Achieved a monthly sales quota of $80k, demonstrating strong sales and business development skills Education Associate in Science (AS) in Business Administration Northern Oklahoma College - Stillwater, OK January 2021 to June 2023 Skills CRM Software (Salesforce, HubSpot, Zoho, Pipedrive) - 5 years SaaS sales - 2 years Machine Learning & Robotics Process Automation - 1 year C#, Python, AutoHotkey, & JavaScript - 2 years Cold Calling - 5 years Microsoft Office - 5 years Computer Networking, Network Admin, & Penetration Testing - 2 years B2B Sales - 5 years Sales - 6 years"
 
 ; Define global variables for config values
 global configFile := A_ScriptDir "\config.ini"
 global commonResponses := Map()  ; Initialize commonResponses as a map
 global editFields := []  ; Array to store dynamically created Edit controls
+
+global jobSearchKeywords := ""
+global resumeSpecifiedPrompt
+
 ; Define the list of strings to check for in HandleJobSearch elements
-global excludeList := ["Applied", "Expired", "Already Applied", "Application Closed", "Manager", "Insurance", "Real Estate", "Solar", "Licensed", "Commission", "Commission-based"]
-global strExcludeList := ""
+global jobExcludeList := ["Applied", "Expired", "Already Applied", "Application Closed", "Manager", "Insurance", "Real Estate", "Solar", "Licensed", "Commission", "Commission-based"]
+global strJobExcludeList := ""
 ; Define the list of job types to exclude in HandleJobSearch
 global excludeJobTypes := ["financial", "health", "insurance", "medical", "va", "autocad", "electronic components", "estimating", "writing", "federal", "transformer", "travel", "foodservice", "logistics", "capital equipment", "glass", "leadership", "supply"]
 global strExcludeJobTypes := ""
 
-global phone := "(405) 334-9539"
-global email := "bachisum@gmail.com"
+global resume := ""
+global phone := ""
+global email := ""
 global linkedIn := "www.linkedin.com/in/FIRSTNAME-LASTNAME-li"
 global currentEmployer := "N/A"
-global cityState := "Ardmore, OK"
+global cityState := ""
 global timezone := "Central Time (CST)"
-global salaryRange := "$50k - $70k"
+global salaryRange := ""
 global travelPreference := "25%"
 global willingToRelocate := "No"
-global citizenshipStatus := "2"
+global citizenshipStatus := ""
 global industryExperience := "Retail, Wholesale, Construction, Manufacturing, Marketing, Insurance, Automotive, Accounting, SaaS"
 global sponsorshipStatus := "No"
 global zeroYearsOfExperience := "financial, health, insurance, medical, va, autocad, electronic components, estimating, writing, federal, transformer, travel, foodservice, logistics, capital equipment, glass, leadership, supply"
@@ -46,19 +50,19 @@ global highestAchieved := "~600k - 5x Quota"
 global speakSpanish := "No"
 global checkboxPatterns := Map("ignoreNA", "N/A", "ignoreNone", "None", "updates", "Share these answers with Indeed")
 global strCheckboxPatterns := ""
+
 global parentCheckboxExcludeList := Map("Add Preferred Name(optional)", "update", "message", "allowed")
-global jobSearchKeywords := "sales"
-global resumeSpecifiedPrompt
+
 
 for checkboxType, checkboxPattern in checkboxPatterns {
     strCheckBoxPatterns .= checkboxPattern ", "
 }
 strCheckboxPatterns := RTrim(strCheckboxPatterns, ', ')
 
-for itemType, excludeItem in excludeList {
-    strExcludeList .= excludeItem ", "
+for itemType, excludeItem in jobExcludeList {
+    strJobExcludeList .= excludeItem ", "
 }
-strExcludeList := RTrim(strExcludeList, ', ')
+strJobExcludeList := RTrim(strJobExcludeList, ', ')
 
 for excludeType, excludeJobType in excludeJobTypes {
     strExcludeJobTypes .= excludeJobType ", "
@@ -154,13 +158,15 @@ CheckConfig(section, key, default, configFile) {
 ; Function to load config values from the .ini file
 LoadConfig() {
     ; Define global variables for config values
-    global strExcludeList, strExcludeJobTypes, phone, email, linkedIn, currentEmployer, cityState, timezone, salaryRange, travelPreference, willingToRelocate, citizenshipStatus, industryExperience, sponsorshipStatus, zeroYearsOfExperience, oneYearOfExperience, speakSpanish
+    global strJobExcludeList, strExcludeJobTypes, phone, email, linkedIn, currentEmployer, cityState, timezone, salaryRange, travelPreference, willingToRelocate, citizenshipStatus, industryExperience, sponsorshipStatus, zeroYearsOfExperience, oneYearOfExperience, speakSpanish
     global backgroundCheck, needTimeOff, highestAchieved, strCheckboxPatterns, checkboxPatterns
-    global commonResponses, configFile, ExcludeList, ExcludeJobTypes, jobSearchKeywords, resumeSpecifiedPrompt
+    global commonResponses, configFile, jobExcludeList, ExcludeJobTypes, jobSearchKeywords, resumeSpecifiedPrompt
+    global resume
 
+    resume := CheckConfig("Settings", "Resume", resume, configFile)
     jobSearchKeywords := CheckConfig("Settings", "Job Search Keywords", jobSearchKeywords, configFile)
     resumeSpecifiedPrompt := CheckConfig("Settings", "Resume Specified Prompt", resumeSpecifiedPrompt, configFile)
-    strExcludeList := CheckConfig("Settings", "Exclude Job Details", strExcludeList, configFile)
+    strJobExcludeList := CheckConfig("Settings", "Exclude Job Details", strJobExcludeList, configFile)
     strExcludeJobTypes := CheckConfig("Settings", "Exclude Job Types", strExcludeJobTypes, configFile)
     phone := CheckConfig("Settings", "Phone", phone, configFile)
     email := CheckConfig("Settings", "Email", email, configFile)
@@ -168,6 +174,7 @@ LoadConfig() {
     currentEmployer := CheckConfig("Settings", "Current Employer", currentEmployer, configFile)
     cityState := CheckConfig("Settings", "City, State", cityState, configFile)
     timezone := CheckConfig("Settings", "Timezone", timezone, configFile)
+    travelPreference := CheckConfig("Settings", "Travel Preference", travelPreference, configFile)
 
     ; Load HandleKeywords strings
     salaryRange := CheckConfig("Settings", "Salary Range", salaryRange, configFile)
@@ -189,7 +196,7 @@ LoadConfig() {
     strCheckboxPatterns := CheckConfig("Settings", "Checkbox Patterns", strCheckboxPatterns, configFile)
 
     checkboxPatterns := StrSplit(strCheckboxPatterns, ", ")
-    excludeList := StrSplit(strExcludeList, ", ")
+    jobExcludeList := StrSplit(strJobExcludeList, ", ")
     excludeJobTypes := StrSplit(strExcludeJobTypes, ", ")
     ; Load common responses
     LoadCommonResponses()
@@ -258,12 +265,14 @@ LoadPatterns() {
 
 ; GUI for setting or editing configuration
 SetupConfig(section := "", key := "", value := "") {
-    global excludeList, excludeJobTypes, phone, email, linkedIn, currentEmployer, cityState, timezone, salaryRange, travelPreference, willingToRelocate, citizenshipStatus, industryExperience, sponsorshipStatus, zeroYearsOfExperience, oneYearOfExperience
+    global jobExcludeList, excludeJobTypes, phone, email, linkedIn, currentEmployer, cityState, timezone, salaryRange, travelPreference, willingToRelocate, citizenshipStatus, industryExperience, sponsorshipStatus, zeroYearsOfExperience, oneYearOfExperience
     global backgroundCheck, needTimeOff, highestAchieved, speakSpanish, strCheckboxPatterns
     global configFile, commonResponses, editFields, ScrollGui
-    global excludeListEdit := excludeList, excludeJobTypesEdit := excludeJobTypes, phoneEdit := phone, emailEdit := email, linkedInEdit := linkedIn, currentEmployerEdit := currentEmployer, cityStateEdit := cityState, timezoneEdit := timezone, salaryRangeEdit := salaryRange, travelPreferenceEdit := travelPreference, willingToRelocateEdit := willingToRelocate, citizenshipStatusEdit := citizenshipStatus, industryExperienceEdit := industryExperience, sponsorshipStatusEdit := sponsorshipStatus, zeroYearsOfExperienceEdit := zeroYearsOfExperience, oneYearOfExperienceEdit := oneYearOfExperience
+    global jobExcludeListEdit := jobExcludeList, excludeJobTypesEdit := excludeJobTypes, phoneEdit := phone, emailEdit := email, linkedInEdit := linkedIn, currentEmployerEdit := currentEmployer, cityStateEdit := cityState, timezoneEdit := timezone, salaryRangeEdit := salaryRange, travelPreferenceEdit := travelPreference, willingToRelocateEdit := willingToRelocate, citizenshipStatusEdit := citizenshipStatus, industryExperienceEdit := industryExperience, sponsorshipStatusEdit := sponsorshipStatus, zeroYearsOfExperienceEdit := zeroYearsOfExperience, oneYearOfExperienceEdit := oneYearOfExperience
     global backgroundCheckEdit := backgroundCheck, needTimeOffEdit := needTimeOff, highestAchievedEdit := highestAchieved, speakSpanishEdit := speakSpanish, checkboxPatternsEdit := strCheckboxPatterns
     global jobSearchKeywordsEdit := jobSearchKeywords, resumeSpecifiedPromptEdit := resumeSpecifiedPrompt
+    global resumeEdit := resume
+
     ; Dynamically create input fields for each question and response
     editFields := []  ; Array to store dynamically created Edit controls
     yPos := 10
@@ -295,11 +304,16 @@ SetupConfig(section := "", key := "", value := "") {
     OnMessage(0x020A, OnWheel)  ; WM_MOUSEWHEEL
 
     ; Process input fields similarly as the original code, with adjusted y positions
-    AddInputField(ScrollGui, "Resume Specified Prompt (prompt for ChatGPT)", &resumeSpecifiedPromptEdit, &yPos, resumeSpecifiedPrompt)
+    AddInputField(ScrollGui, "Resume (+ Name, city, state, and zip)", &resumeEdit, &yPos, resume)
     AddInputField(ScrollGui, "Job Search Keywords (Not Comma Separated)", &jobSearchKeywordsEdit, &yPos, jobSearchKeywords)
-    AddInputField(ScrollGui, "Checkboxes to ignore(checked by default)", &checkboxPatternsEdit, &yPos, strCheckboxPatterns)
-    AddInputField(ScrollGui, "Excluded Job Details/Jobs/Companies", &excludeListEdit, &yPos, strExcludeList)
+    AddInputField(ScrollGui, "Resume Specified Prompt (prompt for ChatGPT)", &resumeSpecifiedPromptEdit, &yPos, resumeSpecifiedPrompt)
+    AddInputField(ScrollGui, "Excluded Job Details/Jobs/Companies", &excludeListEdit, &yPos, strJobExcludeList)
     AddInputField(ScrollGui, "Excluded Job Types (Comma Separated)", &excludeJobTypesEdit, &yPos, strExcludeJobTypes)
+    AddInputField(ScrollGui, "Phone Number (xxx) xxx-xxxx", &phoneEdit, &yPos, phone)
+    AddInputField(ScrollGui, "Email: (address@domain.com)", &emailEdit, &yPos, email)
+    AddInputField(ScrollGui, "LinkedIn URL (linkedin.com/in/FIRST-LAST-li)", &linkedInEdit, &yPos, linkedIn)
+    
+    AddInputField(ScrollGui, "Checkboxes to ignore(checked by default)", &checkboxPatternsEdit, &yPos, strCheckboxPatterns)
     AddInputField(ScrollGui, "Industry Experience (Comma Separated)", &industryExperienceEdit, &yPos, industryExperience)
     AddInputField(ScrollGui, "Industries with 0 to 0.5 yrs of exp", &zeroYearsOfExperienceEdit, &yPos, zeroYearsOfExperience)
     AddInputField(ScrollGui, "Industries with 0.5 to 1.5 yrs of exp", &oneYearOfExperienceEdit, &yPos , oneYearOfExperience)
@@ -313,9 +327,6 @@ SetupConfig(section := "", key := "", value := "") {
     AddInputField(ScrollGui, "City, State (i.e.Seattle, WA)", &cityStateEdit, &yPos, cityState)
     AddInputField(ScrollGui, "Timezone (i.e. Central Time (CST))", &timezoneEdit, &yPos, timezone)
     AddInputField(ScrollGui, "Do you speak Spanish? (Yes/No)", &speakSpanishEdit, &yPos, speakSpanish)
-    AddInputField(ScrollGui, "Phone Number (xxx) xxx-xxxx", &phoneEdit, &yPos, phone)
-    AddInputField(ScrollGui, "Email: (address@domain.com)", &emailEdit, &yPos, email)
-    AddInputField(ScrollGui, "LinkedIn URL (linkedin.com/in/FIRST-LAST-li)", &linkedInEdit, &yPos, linkedIn)
     AddInputField(ScrollGui, "Salary Range (i.e.$50k - $70k)", &salaryRangeEdit, &yPos, salaryRange)
     AddInputField(ScrollGui, "Highest Achieved Quota? (sales)", &highestAchievedEdit, &yPos, highestAchieved)
 
@@ -448,10 +459,10 @@ AddInputField(gui, label, &editControl, &yPos, value, labelEdit := "") {
 
 ; Function to save the configuration
 SaveConfig() {
-    global configFile, commonResponses, excludeList, excludeJobTypes
-    global excludeListEdit, excludeJobTypesEdit, phoneEdit, emailEdit, linkedInEdit, currentEmployerEdit, cityStateEdit, timezoneEdit, salaryRangeEdit, travelPreferenceEdit, willingToRelocateEdit, citizenshipStatusEdit, industryExperienceEdit, sponsorshipStatusEdit, zeroYearsOfExperienceEdit, oneYearOfExperienceEdit
+    global configFile, commonResponses, jobExcludeList, excludeJobTypes
+    global jobExcludeListEdit, excludeJobTypesEdit, phoneEdit, emailEdit, linkedInEdit, currentEmployerEdit, cityStateEdit, timezoneEdit, salaryRangeEdit, travelPreferenceEdit, willingToRelocateEdit, citizenshipStatusEdit, industryExperienceEdit, sponsorshipStatusEdit, zeroYearsOfExperienceEdit, oneYearOfExperienceEdit
     global backgroundCheckEdit, needTimeOffEdit, highestAchievedEdit, speakSpanishEdit, checkboxPatternsEdit
-    excludeList := excludeListEdit.Value, excludeJobTypes := excludeJobTypesEdit.Value, phone := phoneEdit.Value, email := emailEdit.Value, linkedIn := linkedInEdit.Value, currentEmployer := currentEmployerEdit.Value, cityState := cityStateEdit.Value, timezone := timezoneEdit.Value, salaryRange := salaryRangeEdit.Value
+    jobExcludeList := jobExcludeListEdit.Value, excludeJobTypes := excludeJobTypesEdit.Value, phone := phoneEdit.Value, email := emailEdit.Value, linkedIn := linkedInEdit.Value, currentEmployer := currentEmployerEdit.Value, cityState := cityStateEdit.Value, timezone := timezoneEdit.Value, salaryRange := salaryRangeEdit.Value
     travelPreference := travelPreferenceEdit.Value, willingToRelocate := willingToRelocateEdit.Value, citizenshipStatus := citizenshipStatusEdit.Value, industryExperience := industryExperienceEdit.Value, sponsorshipStatus := sponsorshipStatusEdit.Value, zeroYearsOfExperience := zeroYearsOfExperienceEdit.Value, oneYearOfExperience := oneYearOfExperienceEdit.Value
     backgroundCheck := backgroundCheckEdit.Value, needTimeOff := needTimeOffEdit.Value, highestAchieved := highestAchievedEdit.Value, speakSpanish := speakSpanishEdit.Value, strCheckboxPatterns := checkboxPatternsEdit.Value
     global jobSearchKeywords := jobSearchKeywordsEdit.Value, resumeSpecifiedPrompt := resumeSpecifiedPromptEdit.Value
@@ -473,7 +484,7 @@ SaveConfig() {
     ; Write all values to config.ini
     IniWrite(jobSearchKeywords, configFile, "Settings", "Job Search Keywords")
     IniWrite(resumeSpecifiedPrompt, configFile, "Settings", "Resume Specified Prompt")
-    IniWrite(excludeList, configFile, "Settings", "Exclude Job Details")
+    IniWrite(jobExcludeList, configFile, "Settings", "Exclude Job Details")
     IniWrite(excludeJobTypes, configFile, "Settings", "Exclude Job Types")
     IniWrite(phone, configFile, "Settings", "Phone")
     IniWrite(email, configFile, "Settings", "Email")
@@ -762,13 +773,15 @@ JobApplicationQA(input, specifiedPrompt) {
             if holdResponse != response {
                 IniWrite(response, configFile, "CommonResponses", associatedLabel)
             }
-            return input.Value
+            return userAnswerSQ
         }
         IniWrite(response, configFile, "CommonResponses", associatedLabel)
         ; If the Gui fails, you can grab input from the InputBox
         ;inputBoxValue := InputBox("Question:`n`n" element.Name,,, inputValue)
         ;inputValue := inputBoxValue.Value
-        input.Value := response
+        if response != "skip" {
+            input.Value := response
+        }
         return response
     }
 
@@ -798,12 +811,14 @@ JobApplicationQA(input, specifiedPrompt) {
                 if holdResponse != response {
                     IniWrite(response, configFile, "CommonResponses", associatedLabel)
                 }
-                return input.Value
+                return userAnswerSQ
             }
             ; If the Gui fails, you can grab input from the InputBox
             ;inputBoxValue := InputBox("Question:`n`n" element.Name,,, inputValue)
             ;inputValue := inputBoxValue.Value
-            input.Value := response
+            if response != "skip" {
+                input.Value := response
+            }
             return response
         }
     }
@@ -811,7 +826,7 @@ JobApplicationQA(input, specifiedPrompt) {
     ; Handle general "do you" questions
     if InStr(associatedLabel, "do you") {
         response := HandleDoYouQuestions(associatedLabel, input)
-        if response {
+        if response && response != "" {
             if answerReview {
                 holdResponse := response
                 lastWindow := WinActive()
@@ -834,28 +849,22 @@ JobApplicationQA(input, specifiedPrompt) {
                 if holdResponse != response {
                     IniWrite(response, configFile, "CommonResponses", associatedLabel)
                 }
-                return input.Value
+                return userAnswerSQ
             }
             ; If the Gui fails, you can grab input from the InputBox
             ;inputBoxValue := InputBox("Question:`n`n" element.Name,,, inputValue)
             ;inputValue := inputBoxValue.Value
-            input.Value := response
+            if response != "skip" {
+                input.Value := response
+            }
             return response
         }
         
     }
 
-    ; Match the associatedLabel to a common response
-    ;for key, value in commonResponses {
-    ;    if InStr(associatedLabel, key) {
-    ;        input.Value := value
-    ;        return value
-    ;    }
-    ;}
-
     ; Check if the question exists in commonResponses
     comResp := IniRead(configFile, "CommonResponses", associatedLabel, "")
-    if comResp != "" {
+    if comResp && comResp != "" {
         if answerReview {
             holdComResp := comResp
             lastWindow := WinActive()
@@ -875,7 +884,9 @@ JobApplicationQA(input, specifiedPrompt) {
                 global userAnswerSQ
                 answerReviewGui.Hide()
                 userAnswerSQ := EditBox.Value
-                input.Value := EditBox.Value
+                if EditBox.Value != "skip" {
+                    input.Value := EditBox.Value
+                }
                 answerReviewGui.Destroy()
             }
 
@@ -891,7 +902,9 @@ JobApplicationQA(input, specifiedPrompt) {
         ; If the Gui fails, you can grab input from the InputBox
         ;inputBoxValue := InputBox("Question:`n`n" element.Name,,, inputValue)
         ;inputValue := inputBoxValue.Value
-        input.Value := comResp
+        if comResp != "skip" {
+            input.Value := comResp
+        }
         return comResp
     }
 
@@ -1129,18 +1142,72 @@ HandleRadioButtons(rootElement, answerReview := false) {
 
 ; Handle checkboxes
 HandleCheckboxes(rootElement) {
-    global resume, checkboxPatterns, strCheckboxPatterns, checkBoxSuccess := false, strCheckboxes := ""
-    global answerReview, associatedLabel, parentCheckboxExcludeList, parentCheckboxFailure := UIA()
+    global resume, checkboxPatterns, strCheckboxPatterns, checkBoxSuccess := false, strCheckboxesA := "", strCheckboxesB := ""
+    global answerReview, associatedLabel, parentCheckboxExcludeList, parentCheckboxFailure := "" ;UIA()
+    global holdParentElementName := "", parentElementA := "", parentElementB := ""
 
     ; Find all checkbox elements
     checkboxes := rootElement.FindAll({ LocalizedType: "check box" })
-    for checkbox in checkboxes {
-        strCheckboxes .= checkbox.Name ", "
-    }
-    strCheckboxes := RTrim(strCheckboxes, ', ')
-    if strCheckboxes == "" {
+
+    if GetArrayLength(checkboxes) == 0 {
+        FileAppend("No checkboxes found.`n", "apply_debug_log.txt")
         return true
     }
+
+    for checkbox in checkboxes {
+        
+        treeWalker := UIA.CreateTreeWalker(UIA.ControlViewCondition)
+        parentElement := treeWalker.GetParentElement(checkbox)
+        
+        if parentElement.Name == holdParentElementName {
+            ; Do nothing
+        } else {
+            FileAppend("Checkbox Question: " parentElement.Name "`n", "all_questions.txt")
+        }
+
+        try {
+            holdParentElementName := parentElement.Name
+        } catch {
+            holdParentElementName := ""
+        }
+        
+        FileAppend("Checkbox option: " checkbox.Name "`n", "all_questions.txt")
+    }
+
+    holdParentElementName := ""
+
+    for i, checkbox in checkboxes {
+        
+        treeWalker := UIA.CreateTreeWalker(UIA.ControlViewCondition)
+        parentElement := treeWalker.GetParentElement(checkbox)
+        if holdParentElementName == "" {
+            parentElementA := parentElement
+            childrenElements := parentElement.FindAll({ LocalizedType: "check box" })
+            holdParentElementName := parentElement.Name
+            for childElement in childrenElements {
+                strCheckboxesA .= childElement.Name ", "
+            }
+            continue
+        }
+        if parentElement.Name == holdParentElementName {
+            ; Do nothing
+        } else {
+            parentElementB := parentElement
+            childrenElements := parentElement.FindAll({ LocalizedType: "check box" })
+            for childElement in childrenElements {
+                strCheckboxesB .= childElement.Name ", "
+            }
+            holdParentElementName := parentElement.Name
+        }
+        
+    }
+    strCheckboxesA := RTrim(strCheckboxesA, ', ')
+    strCheckboxesB := RTrim(strCheckboxesB, ', ')
+    if strCheckboxesA == "" {
+        FileAppend("No checkboxes found in strCheckboxesA.`n", "apply_debug_log.txt")
+        return true
+    }
+
     ;MsgBox("Checkboxes found: " strCheckboxes)
     for checkbox in checkboxes {
         global checkBoxSuccess, checkboxFailure := false, parentCheckboxExcludeList, parentCheckboxFailure, associatedLabel
@@ -1152,7 +1219,7 @@ HandleCheckboxes(rootElement) {
 
         ; Get the TogglePattern to check the state
         if !(togglePattern := checkbox.GetPattern("TogglePattern")) {
-            MsgBox("No TogglePattern available for checkbox: " checkbox.Name)
+            FileAppend("No TogglePattern available for checkbox: " checkbox.Name)
             continue
         }
 
@@ -1161,36 +1228,38 @@ HandleCheckboxes(rootElement) {
         parentElement := treeWalker.GetParentElement(checkbox)
 
         if parentCheckboxFailure == parentElement.Name {
+            FileAppend("parentElement: " parentElement.Name " is still on the ignore list for this option: " checkbox.Name ". Skipping question.`n", "skip_log.txt")
             continue
         }
 
         for each in parentCheckboxExcludeList {
             if InStr(parentElement.Name, each) {
                 parentCheckboxFailure := parentElement.Name
+                FileAppend("Parent element: " parentElement.Name " was matched with " each " on the ignore list. Skipping.`n", "skip_log.txt")
                 break
             }
         }
 
+        ; Check upon initial
         if parentCheckboxFailure == parentElement.Name {
-            FileAppend("Parent element: " parentElement.Name " is on the ignore list. Skipping.", "skip_log.txt")
+            FileAppend("Parent element: " parentElement.Name " is on the ignore list. Skipping question.`n", "skip_log.txt")
             continue
         } else {
-            parentCheckboxFailure := UIA()
+            parentCheckboxFailure := "" ;UIA()
         }
 
         if toggleState := togglePattern.ToggleState == 1 {
-            FileAppend("Checkbox " checkbox.Name " for " parentElement.Name " is already selected. Skipping.", "apply_debug_log.txt")
+            FileAppend("Checkbox " checkbox.Name " for " parentElement.Name " is already selected. Skipping.`n", "apply_debug_log.txt")
             continue
         }
 
-        global checkboxFailure := false, checkboxText := checkbox.Name
+        global checkboxText := checkbox.Name
         ; Check if the associated text matches any pattern
         for pattern in checkboxPatterns {
-            global checkboxText, checkboxFailure
+            global checkboxText, checkboxFailure, parentCheckboxFailure
             if InStr(checkboxText, pattern) {
-                checkboxFailure := true
-                FileAppend("Checkbox " checkboxText " for " parentElement.Name " is on the ignore list. Skipping.", "all_questions.txt")
-                FileAppend("Checkbox " checkboxText " for " parentElement.Name " is on the ignore list. Skipping.", "skip_log.txt")
+                FileAppend("Checkbox " checkboxText " for " parentElement.Name " is on the ignore list. Skipping question.", "all_questions.txt")
+                FileAppend("Checkbox " checkboxText " for " parentElement.Name " is on the ignore list. Skipping question.", "skip_log.txt")
                 checkboxFailure := true
                 break
             }
@@ -1201,17 +1270,100 @@ HandleCheckboxes(rootElement) {
         }
 
         if checkboxSuccess {
-            FileAppend("Checkbox for " checkboxText " is not on the ignore list. Clicking checkbox.", "apply_debug_log.txt")
+            FileAppend("Checkbox for " checkboxText " is not on the ignore list. Clicking checkbox.`n", "apply_debug_log.txt")
             ClickElementByPath(checkbox, rootElement)
         }
     }
     ; Check if the last parent element is on the ignore list. If checkboxSuccess is still false, then it's safe to assume that all of the parent elements are on the ignore list.
-    if parentCheckboxFailure != UIA() && !checkboxSuccess {
+    if parentCheckboxFailure != "" && !checkboxSuccess {
+        FileAppend("Parent element: " parentCheckBoxfailure " is on the ignore list. Skipping question.`n", "skip_log.txt")
         return true
     }
 
-    childrenCheckboxes := parentElement.FindAll({ LocalizedType: "check box" })
-    if !checkboxSuccess {
+    childrenCheckboxes := parentElementA.FindAll({ LocalizedType: "check box" })
+    parentElement := parentElementA
+    strCheckboxes := strCheckboxesA
+    if !checkboxSuccess && parentCheckboxFailure != parentElement.Name {
+        ;ToolTip("No answer found. Asking ChatGPT.")  ; Debugging output
+        FileAppend("No checkbox answer found. Asking ChatGPT.`nQuestion: " parentElement.Name "`nAnswer Options:`n" strCheckboxes "`n`n", "JobApplicationQA_debug_log.txt")
+        FileAppend("No checkbox answer found. Asking ChatGPT.`nQuestion: " parentElement.Name "`nAnswer Options:`n" strCheckboxes "`n`n", "apply_debug_log.txt")        
+
+        answer := ChatGPT( parentElement.Name "`nAnswer Options: " strCheckboxes, "Using the following resume for context, directly answer the question using one or more of the options provided. Do not provide any other output and separate answer using a comma & space ', ' Example Options: Yes or No Example Answer: Yes", resume, , , , getGPTFeedback := "True")
+        if answerReview {
+            inputBoxValue := InputBox("Review Options: " strCheckboxes "`nfor Label: " associatedLabel,,, answer)
+            inputValue := inputBoxValue.Value
+            inputArrValue := StrSplit(inputValue, ", ")
+
+            for i in inputArrValue {
+                if InStr(strCheckboxes, i) {
+                    for childCheckBox in childrenCheckboxes {
+                        if childCheckBox.Name == i {
+                            ClickElementByPath(childCheckBox, rootElement)
+                            FileAppend("Found i: " i " and checked checkbox: " childCheckbox.Name " for parentElement.Name: " parentElement.Name "`n", "all_questions.txt")
+                        }
+                    }
+                } else {
+                    ToolTip("Failed to grab a proper answer from both user and ChatGPT. Really now?", 2000, 2000)  ; Debugging output
+                    FileAppend("Failed to grab a proper answer from both user and ChatGPT.`n `nQuestion: " parentElement.Name "`nAnswer Options:`n" strCheckboxes "`nChatGPT response: " answer "`n`n", logFile)
+                }
+            }
+        } else {
+            if InStr(answer, ", ") {
+                answer := StrSplit(answer, ", ")
+                for each in answer {
+                    strAnswer .= "`n" each
+                }
+
+                for i in answer {
+                    if InStr(strCheckboxes, i) {
+                        for childCheckBox in childrenCheckboxes {
+                            if childCheckBox.Name == i {
+                                ClickElementByPath(childCheckbox, rootElement)
+                                FileAppend("Found i: " i " and checked checkbox: " childCheckbox.Name " for parentElement.Name: " parentElement.Name "`n", "all_questions.txt")
+                            } else {
+                                continue
+                            }
+                        }
+                    } else {
+                        ShowToolTipWithTimer("Failed to grab a proper answer from ChatGPT.", 2000, 2000)  ; Debugging output
+                        MsgBox("Failed to grab a proper answer from ChatGPT.")
+                        FileAppend("Failed to grab a proper answer from ChatGPT.`n `nQuestion: " parentElement.Name "`nAnswer Options:`n" strCheckboxes "`nChatGPT response: " strAnswer "`n`n", logFile)
+                    }
+                }
+            } else {
+                strAnswer := answer ; If there is only one answer from ChatGPT, go ahead and define strAnswer to maintain consistency in logging
+                if InStr(strCheckboxes, strAnswer) {
+                    for childCheckBox in childrenCheckboxes {
+                        if childCheckBox.Name == strAnswer {
+                            ClickElementByPath(childCheckbox, rootElement)
+                            FileAppend("Found i: " strAnswer " and checked checkbox: " childCheckbox.Name " for parentElement.Name: " parentElement.Name "`n", "all_questions.txt")
+                        } else {
+                            continue
+                        }
+                    }
+                } else {
+                    ShowToolTipWithTimer("Failed to grab a proper answer from ChatGPT.", 2000, 2000)  ; Debugging output
+                    MsgBox("Failed to grab a proper answer from ChatGPT.")
+                    FileAppend("Failed to grab a proper answer from ChatGPT.`n `nQuestion: " parentElement.Name "`nAnswer Options:`n" strCheckboxes "`nChatGPT response: " strAnswer "`n`n", logFile)
+                }
+            }
+        }
+    }
+
+    if strCheckboxesB == "" {
+        FileAppend("No checkboxes found in strCheckboxesB.`n", "apply_debug_log.txt")
+        return true
+    }
+
+    if parentElementB == "" {
+        FileAppend("No parentElementB found.`n", "apply_debug_log.txt")
+        return true
+    }
+
+    childrenCheckboxes := parentElementA.FindAll({ LocalizedType: "check box" })
+    parentElement := parentElementB
+    strCheckboxes := strCheckboxesB
+    if !checkboxSuccess && parentCheckboxFailure != parentElement.Name {
         ;ToolTip("No answer found. Asking ChatGPT.")  ; Debugging output
         FileAppend("No checkbox answer found. Asking ChatGPT.`nQuestion: " parentElement.Name "`nAnswer Options:`n" strCheckboxes "`n`n", "JobApplicationQA_debug_log.txt")
         FileAppend("No checkbox answer found. Asking ChatGPT.`nQuestion: " parentElement.Name "`nAnswer Options:`n" strCheckboxes "`n`n", "apply_debug_log.txt")        
@@ -1282,11 +1434,16 @@ HandleCheckboxes(rootElement) {
 }
 
 HandleComboBoxes(rootElement, answerReview) {
-    comboBoxes := rootElement.FindAll({ LocalizedType: "combo box" })
+    try {
+        comboBoxes := rootElement.FindAll({ LocalizedType: "combo box" })
+    } catch {
+        return true
+    }
 
     if GetArrayLength(comboBoxes) == 0 {
         return true
     }
+
     arrLengthA := GetArrayLength(comboBoxes)
     if arrLengthA != 0 {
         for comboBox in comboBoxes {
@@ -1309,7 +1466,7 @@ HandleComboBoxes(rootElement, answerReview) {
                 ;MsgBox("Found the following combo box children:`n" childNames)
 
                 for child in children {
-                    if InStr(child.Name, "United States") || InStr(child.Name, "Oklahoma") || InStr(child.Name, " OK ") || InStr(child.Name, "I decline to identify") || InStr(child.Name, "I prefer not to answer") || InStr(child.Name, "Decline To Self Identify") || InStr(child.Name, "I do not wish to answer") || InStr(child.Name, "I don't wish to answer") || InStr(child.Name, "Other") {
+                    if InStr(child.Name, "United States") || InStr(child.Name, "Associate's Degree") || InStr(child.Name, "Oklahoma") || InStr(child.Name, " OK ") || InStr(child.Name, "I decline to identify") || InStr(child.Name, "I prefer not to answer") || InStr(child.Name, "Decline To Self Identify") || InStr(child.Name, "I do not wish to answer") || InStr(child.Name, "I don't wish to answer") || InStr(child.Name, "Other") {
                         comboBoxSuccess := true
                         child.Invoke()
                         break
