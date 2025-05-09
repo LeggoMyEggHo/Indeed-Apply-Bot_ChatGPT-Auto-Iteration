@@ -6,7 +6,7 @@
 
 **All you need to do is download the one file: "IndeedApplySimple.exe" and run it.** The other files are source code for transparency and collaboration.
 
-    PREAMBLE
+PREAMBLE
 
 "Easily Apply" is anything but. Predatory listings. Ghost jobs. Pointless forms that feel like a test of patience. Some employers ask twenty irrelevant questions just because most people will jump through the hoops. It's unpaid labor disguised as opportunity. Let's put some power back into the hands of the working class by helping everyone work less. 
 
@@ -36,17 +36,17 @@ This script utilizes AutoHotKey v2 to mimic user input (the whole point of using
 
 -----------------------------------------------------------------
 
-**"ctrl + j"** for job > then **"a"** = regular applying; **"r"** to check reviews for companies on that page; **"o"** to do both automatically (filters out companies with undeniably bad reviews, currently not fully supported)
+    **"ctrl + j"** for job > then **"a"** = regular applying; **"r"** to check reviews for companies on that page; **"o"** to do both automatically (filters out companies with undeniably bad reviews, currently not fully supported)
 
-**"ctrl + i"** for ChatGPT iterations > then **"i"** for regular prompting; **"f"** for function-specific prompting. This turned out to be similar to the same toolware for o1, with the tradeoff being a better answer but it takes longer than o1 a lot of the time due to the inability to multithread the prompts. That and you don't get charged $200 for unlimited use. It's main function is to prompt ChatGPT to chunk your prompt into smaller, more modular function-specific prompts before iterating on each piece.  (reduces context limit problems while allowing for a ridiculously comprehensive response per function without losing the context of the whole project).
+    **"ctrl + i"** for ChatGPT iterations > then **"i"** for regular prompting; **"f"** for function-specific prompting. This turned out to be similar to the same toolware for o1, with the tradeoff being a better answer but it takes longer than o1 a lot of the time due to the inability to multithread the prompts. That and you don't get charged $200 for unlimited use. It's main function is to prompt ChatGPT to chunk your prompt into smaller, more modular function-specific prompts before iterating on each piece.  (reduces context limit problems while allowing for a ridiculously comprehensive response per function without losing the context of the whole project).
 
-**"ctrl + e"** for editing ini.config manually (first-time users can directly use **"ctrl + j"** without the need to add this file manually)
+    **"ctrl + e"** for editing ini.config manually (first-time users can directly use **"ctrl + j"** without the need to add this file manually)
 
-**"ctrl + u"** for UIA.Viewer() [Credits & Courtesy to Descolada]
+    **"ctrl + u"** for UIA.Viewer() [Credits & Courtesy to Descolada]
 
-**"Esc"** (escape) to exit
-**"alt + r"** to reload
-**"ctrl + p"** to pause the script (press again to unpause)
+    **"Esc"** (escape) to exit
+    **"alt + r"** to reload
+    **"ctrl + p"** to pause the script (press again to unpause)
 
 
 Like my project and want to see more of my work? Give me a star so I can remain mentally motivated to finish coding my other project: a decentralized GPT model that learns in real-time, solves many problems with current models, and with no need for a human-in-the-middle (or finetuning).
