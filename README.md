@@ -1,9 +1,16 @@
 # Indeed-Apply-Bot_ChatGPT-Auto-Iteration
-Indeed Easy Search, Check Reviews, &amp; Apply
-ChatGPT Automatic Iteration - get the best results per prompt
+**Indeed Easy Search, Check Reviews, &amp; Apply**
+**ChatGPT Automatic Iteration - get the best results per prompt**
+
+-----------------------------------------------------------------
 
 **This script currently only works on Windows PC + Chrome browser**
+
 **Cover Letters are currently not supported**
+
+**Please make an "issue" when requesting Collaborator access**
+
+-----------------------------------------------------------------
 
 "ctrl + j" for job > then "a" = regular applying; "r" to check reviews for companies on that page; "o" to do both automatically (filters out companies with clearly bad reviews, may cause errors)
 
