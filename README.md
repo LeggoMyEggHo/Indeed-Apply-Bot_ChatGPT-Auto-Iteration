@@ -4,6 +4,8 @@
 
 **Cover Letters are currently not supported**
 
+**All you need to do is download the one file: "IndeedApplySimple.ahk" and run it.** The other files are source code for collaboration.
+
 PREAMBLE
 
 "Easily Apply" is anything but. Predatory listings. Ghost jobs. Pointless forms that feel like a test of patience. Some employers ask twenty irrelevant questions just because most people will jump through the hoops. It's unpaid labor disguised as opportunity. Let's put some power back into the hands of the working class by helping everyone work less. 
