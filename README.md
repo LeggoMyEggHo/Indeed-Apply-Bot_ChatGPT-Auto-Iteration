@@ -1,12 +1,12 @@
 # Indeed-Apply-Bot_ChatGPT-Auto-Iteration
 
-**This script currently only works on Windows PC + Chrome browser.**
+**This application currently only works on Windows PC + Chrome browser.**
 
 **Cover Letters are currently not supported**
 
 PREAMBLE
 
-"Easily Apply" is anything but. Predatory listings. Ghost jobs. Pointless forms that feel like a test of patience. Employers ask twenty irrelevant questions just because most people will jump through the hoops. It's unpaid labor disguised as opportunity. Let's put some power back into the hands of the working class by helping everyone work less. 
+"Easily Apply" is anything but. Predatory listings. Ghost jobs. Pointless forms that feel like a test of patience. Some employers ask twenty irrelevant questions just because most people will jump through the hoops. It's unpaid labor disguised as opportunity. Let's put some power back into the hands of the working class by helping everyone work less. 
 
 **Indeed Auto Apply / Check Reviews - find the right job for you as fast as possible** - Find better jobs faster. This tool does what Indeed should be doing already. Every new hire is a lost user for them. I’ve worked in sales long enough to tell you with confidence that companies care about profits over people and appearances over reality. This includes nonprofits. Indeed's real customer is the employer, not you. They want you applying endlessly so employers see a healthy talent pool. It’s not about helping you land a job. It's about keeping you stuck in the loop.
 
