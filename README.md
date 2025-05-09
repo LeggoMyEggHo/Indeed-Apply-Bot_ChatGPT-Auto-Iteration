@@ -4,9 +4,9 @@
 
 **Cover Letters are currently not supported**
 
-**All you need to do is download the one file: "IndeedApplySimple.exe" and run it.** The other files are source code for collaboration.
+**All you need to do is download the one file: "IndeedApplySimple.exe" and run it.** The other files are source code for transparency and collaboration.
 
-PREAMBLE
+                                                                                                                        PREAMBLE
 
 "Easily Apply" is anything but. Predatory listings. Ghost jobs. Pointless forms that feel like a test of patience. Some employers ask twenty irrelevant questions just because most people will jump through the hoops. It's unpaid labor disguised as opportunity. Let's put some power back into the hands of the working class by helping everyone work less. 
 
@@ -20,17 +20,17 @@ Indeed Apply Bot - This script automatically checks reviews and/or applies to sp
 
 ChatGPT Auto Iteration - This script works with Indeed Apply Bot while also working as a standalone script. It can utilize a set prompt (similar to custom instructions) **+** your question **+** previous ChatGPT responses. The set prompt and question (input text) always applies to each iteration, but the previous responses are capped to 3 or 60k token length, whichever happens first. This helps reduce the number of useless responses given by the model when nearing the context(token) limit. The "free GPT vs. paid vs. incognito mode" is mostly coded already for testing reasons (before temporary chats existed), so please leave a star and a comment in "Discussions" if you'd like to see this fully implemented and supported.
 
-This script utilizes AutoHotKey v2 to mimic user input (the whole point of using AHK here), thus allowing the user to remain compliant with both Indeed's and OpenAI's TOS. The both scripts include mouse click boundaries (avoids clicking the same spot repeatedly), random wait times between certain interactions to simulate human behavior, allows for load times on older PC's, and avoid Indeed's rate limiting to a large degree.
+This script utilizes AutoHotKey v2 to mimic user input (the whole point of using AHK here), thus allowing the user to remain compliant with both Indeed's and OpenAI's TOS. Both scripts include random mouse click boundaries (avoids clicking the same spot repeatedly) and random wait times between certain interactions to simulate human behavior, allowing for load times on older PC's while avoiding Indeed's rate limiting to a large degree.
 
 -----------------------------------------------------------------
 
-**It's not possible to know of every issue that exists on every device, so please create an "issue" when you run into problems."
+**It's not possible to know of every issue that exists on every device, so please create an "issue" when you run into problems."**
 
 **As well, using ChatGPT via incognito window is currently disabled within the script. If this becomes a problem, please create an "issue".**
 
-**BEWARE: Do NOT leave this script running when playing online games that have Anti-Cheat software! While it is generally fine for most games, as with all scripts and for many competitive games, the risk is always there.**
+**BEWARE: Do NOT leave this script running when playing online games that have Anti-Cheat software! While it is generally fine for most games, as with all scripts and for many competitive games, the risk of game bans is always there.**
 
-**Indeed limits users to roughly 45 applications per hour before automatically rate limiting.**
+**Indeed limits users to roughly 45 applications per hour before automatically rate limiting. If this happens frequently, let me know and I'll turn the rate timer back on.**
 
 **Collaborators: Please create an "issue" to request Collaborator access**
 
@@ -44,11 +44,13 @@ This script utilizes AutoHotKey v2 to mimic user input (the whole point of using
 
 **"ctrl + u"** for UIA.Viewer() [Credits & Courtesy to Descolada]
 
-Credits & Courtesy to Descolada for providing UIAv2, the underlying framework making this possible.
-
 **"Esc"** (escape) to exit
 **"alt + r"** to reload
 **"ctrl + p"** to pause the script (press again to unpause)
 
 
-Like my project and want to see more of my work? Give me a star so I can remain mentally motivated to finish coding my other project: a decentralized GPT model that learns in real-time, solves many problems with current models, and with no need for a human-in-the-middle (or finetuning)!
+Like my project and want to see more of my work? Give me a star so I can remain mentally motivated to finish coding my other project: a decentralized GPT model that learns in real-time, solves many problems with current models, and with no need for a human-in-the-middle (or finetuning).
+
+Credits & Courtesy to Descolada for providing and maintaining UIAv2, the underlying framework making this possible. Please check out their link below (Especially the package manager).
+
+https://github.com/Descolada
