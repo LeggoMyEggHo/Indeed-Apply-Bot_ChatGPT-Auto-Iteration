@@ -38,11 +38,14 @@ This script utilizes AutoHotKey v2 to mimic user input (the whole point of using
 
     **"ctrl + j"** for job > then **"a"** = regular applying; **"r"** to check reviews for companies on that page; **"o"** to do both automatically (filters out companies with undeniably bad reviews, currently not fully supported)
 
-    **"ctrl + i"** for ChatGPT iterations > then **"i"** for regular prompting; **"f"** for function-specific prompting. This turned out to be similar to the same toolware for o1, with the tradeoff being a better answer but it takes longer than o1 a lot of the time due to the inability to multithread the prompts. That and you don't get charged $200 for unlimited use. It's main function is to prompt ChatGPT to chunk your prompt into smaller, more modular function-specific prompts before iterating on each piece.  (reduces context limit problems while allowing for a ridiculously comprehensive response per function without losing the context of the whole project).
+    **"ctrl + i"** for ChatGPT iterations > then **"i"** for regular prompting; **"f"** for function-specific prompting.
+   Prompts ChatGPT to chunk your prompt into smaller, more modular function-specific prompts before iterating on each piece. Reduces context limit problems while allowing for a ridiculously comprehensive response per function without losing the context of the whole project.
 
-    **"ctrl + e"** for editing ini.config manually (first-time users can directly use **"ctrl + j"** without the need to add this file manually)
+    **"ctrl + e"** for editing ini.config manually
+   first-time users can directly use **"ctrl + j"** without the need to add this file manually.
 
-    **"ctrl + u"** for UIA.Viewer() [Credits & Courtesy to Descolada]
+    **"ctrl + u"** for UIA.Viewer()
+   [Credits & Courtesy to Descolada]
 
     **"Esc"** (escape) to exit
     **"alt + r"** to reload
