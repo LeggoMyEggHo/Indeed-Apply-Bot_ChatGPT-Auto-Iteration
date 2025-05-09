@@ -52,8 +52,8 @@ This script utilizes AutoHotKey v2 to mimic user input (the whole point of using
     "ctrl + p" to pause the script (press again to unpause)
 
 
-Like my project and want to see more of my work? Give me a star so I can remain mentally motivated to finish coding my other project: a decentralized GPT model that learns in real-time, solves many problems with current models, and with no need for a human-in-the-middle (or finetuning).
+Like my project and want to see more of my work? Give me a star so I can stay mentally motivated to finish coding my other project: a multimodal model that can run on your phone, learns in real-time, generalizes across domains, utilizes abstract reasoning, easily achieves millions in context length, and with no need for a human-in-the-middle (or finetuning) to keep growing.
 
-Credits & Courtesy to Descolada for providing and maintaining UIAv2, the underlying framework making this possible. Please check out their link below (Especially the package manager).
+Credits & Courtesy to Descolada for providing and maintaining UIAv2, the underlying framework making this possible. Please check out their link below (Especially the package manager!).
 
 https://github.com/Descolada
