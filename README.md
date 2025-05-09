@@ -4,7 +4,7 @@
 
 **Cover Letters are currently not supported**
 
-**All you need to do is download the one file: "IndeedApplySimple.ahk" and run it.** The other files are source code for collaboration.
+**All you need to do is download the one file: "IndeedApplySimple.exe" and run it.** The other files are source code for collaboration.
 
 PREAMBLE
 
